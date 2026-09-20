@@ -33,6 +33,10 @@ export async function POST(req){
       const providerMessage=
         result.data?.errors?.[0]?.message||
         result.data?.errors?.[0]?.detail||
+        result.data?.Result?.Error?.[0]?.Message||
+        result.data?.Result?.Error?.[0]?.message||
+        result.data?.Result?.errors?.[0]?.message||
+        result.data?.faultstring||
         result.data?.message||
         "Travelport returned an error.";
 
