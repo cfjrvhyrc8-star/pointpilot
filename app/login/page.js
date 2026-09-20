@@ -7,7 +7,7 @@ export default function Login(){
  const[name,setName]=useState(""),[email,setEmail]=useState(""),[msg,setMsg]=useState(""),[loading,setLoading]=useState(false);
  async function submit(e){
   e.preventDefault(); setMsg(""); setLoading(true);
-  const cleanName=name.trim(),cleanEmail=email.trim().toLowerCase();
+  const cleanName=name.trim(),cleanEmail=email.trim().toLowerCase(); window.localStorage.setItem("pointpilot_holder_name",cleanName);
   const{error}=await getSupabase().auth.signInWithOtp({email:cleanEmail,options:{emailRedirectTo:window.location.origin+"/dashboard",data:{full_name:cleanName}}});
   setLoading(false);
   setMsg(error?error.message:"Secure sign-in link sent. Check your email and click the link to open your PointPilot wallet.");
