@@ -1,19 +1,40 @@
 import {NextResponse} from "next/server";
+import {duffelConfigured,searchFlights,searchHotels} from "@/lib/travel-provider";
 
-const BASE=process.env.AMADEUS_BASE_URL||"https://test.api.amadeus.com";
-async function token(){
- const b=new URLSearchParams({grant_type:"client_credentials",client_id:process.env.AMADEUS_CLIENT_ID||"",client_secret:process.env.AMADEUS_CLIENT_SECRET||""});
- const r=await fetch(BASE+"/v1/security/oauth2/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:b,cache:"no-store"});
- const raw=await r.text(); let data; try{data=JSON.parse(raw)}catch{data={raw:raw.slice(0,500)}}
- if(!r.ok)throw new Error(`Amadeus authentication failed (${r.status}): ${data?.error_description||data?.error||"check Client ID/Secret"}`);
- if(!data?.access_token)throw new Error("Amadeus authentication returned no access token.");
- return data.access_token
-}
 export async function GET(){
- return NextResponse.json({ok:true,amadeusConfigured:Boolean(process.env.AMADEUS_CLIENT_ID&&process.env.AMADEUS_CLIENT_SECRET),baseUrl:BASE})
+ return NextResponse.json({
+  ok:true,
+  provider:"Duffel",
+  flightsConfigured:duffelConfigured(),
+  hotelsStatus:"separate_access_required"
+ });
 }
-async function getJson(url,t){const r=await fetch(url,{headers:{Authorization:"Bearer "+t},cache:"no-store"});const text=await r.text();let data;try{data=JSON.parse(text)}catch{data={raw:text}}return{r,data}}
-export async function POST(req){try{const p=await req.json();if(!process.env.AMADEUS_CLIENT_ID||!process.env.AMADEUS_CLIENT_SECRET)return NextResponse.json({status:"not_configured",message:"Add Amadeus Client ID and Secret in Vercel Environment Variables to enable live travel search."});const t=await token();
-if(p.mode==="flight"){if(!p.departureDate)return NextResponse.json({status:"error",message:"Departure date is required."},{status:400});const u=new URL(BASE+"/v2/shopping/flight-offers");u.searchParams.set("originLocationCode",(p.origin||"BOM").toUpperCase());u.searchParams.set("destinationLocationCode",(p.destination||"LHR").toUpperCase());u.searchParams.set("departureDate",p.departureDate);if(p.returnDate)u.searchParams.set("returnDate",p.returnDate);u.searchParams.set("adults",String(p.adults||1));u.searchParams.set("travelClass",p.cabin||"ECONOMY");u.searchParams.set("currencyCode","INR");u.searchParams.set("max","10");const{r,data}=await getJson(u,t);return r.ok?NextResponse.json({status:"live",provider:"Amadeus",data}):NextResponse.json({status:"provider_error",code:r.status,data},{status:502})}
-if(p.mode==="hotel"){if(!p.cityCode||!p.checkInDate||!p.checkOutDate)return NextResponse.json({status:"error",message:"City code, check-in and check-out are required."},{status:400});const city=new URL(BASE+"/v1/reference-data/locations/hotels/by-city");city.searchParams.set("cityCode",p.cityCode.toUpperCase());city.searchParams.set("radius","20");city.searchParams.set("radiusUnit","KM");city.searchParams.set("hotelSource","ALL");const list=await getJson(city,t);if(!list.r.ok)return NextResponse.json({status:"provider_error",code:list.r.status,data:list.data},{status:502});const ids=(list.data.data||[]).map(x=>x.hotelId).filter(Boolean).slice(0,20);if(!ids.length)return NextResponse.json({status:"live",provider:"Amadeus",data:{data:[],meta:{count:0},message:"No hotel IDs returned for this city code."}});const offers=new URL(BASE+"/v3/shopping/hotel-offers");offers.searchParams.set("hotelIds",ids.join(","));offers.searchParams.set("adults",String(p.adults||1));offers.searchParams.set("checkInDate",p.checkInDate);offers.searchParams.set("checkOutDate",p.checkOutDate);offers.searchParams.set("roomQuantity","1");offers.searchParams.set("currency","INR");const result=await getJson(offers,t);return result.r.ok?NextResponse.json({status:"live",provider:"Amadeus",data:result.data}):NextResponse.json({status:"provider_error",code:result.r.status,data:result.data},{status:502})}
-return NextResponse.json({status:"error",message:"Unknown search mode."},{status:400})}catch(e){return NextResponse.json({status:"error",message:e.message||"Unexpected server error"},{status:500})}}
+
+export async function POST(req){
+ try{
+  const p=await req.json();
+  if(p.mode==="flight"){
+   if(!p.origin||!p.destination||!p.departureDate)
+    return NextResponse.json({status:"error",message:"Origin, destination and departure date are required."},{status:400});
+   if(!duffelConfigured())
+    return NextResponse.json({status:"not_configured",message:"Add DUFFEL_ACCESS_TOKEN in Vercel Environment Variables to enable live flight search."},{status:503});
+   const result=await searchFlights(p);
+   if(result.status>=200&&result.status<300)
+    return NextResponse.json({status:"live",provider:"Duffel",data:result.data});
+   return NextResponse.json({
+    status:"provider_error",
+    provider:"Duffel",
+    code:result.status,
+    message:result.data?.errors?.[0]?.message||result.data?.message||"Duffel returned an error.",
+    data:result.data
+   },{status:502});
+  }
+  if(p.mode==="hotel"){
+   const result=await searchHotels(p);
+   return NextResponse.json(result.data,{status:result.status===501?501:result.status});
+  }
+  return NextResponse.json({status:"error",message:"Unknown search mode."},{status:400});
+ }catch(e){
+  return NextResponse.json({status:"error",message:e?.message||"Unexpected server error"},{status:500});
+ }
+}
