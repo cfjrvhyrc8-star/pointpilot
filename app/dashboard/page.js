@@ -97,7 +97,7 @@ function FlightSearch(){
 function HotelSearch(){
  const [wallet,setWallet]=useState([]);
  const [rewardRules,setRewardRules]=useState(FALLBACK_REWARD_RULES);
- const [form,setForm]=useState({hotel:"Marriott Bonvoy",cash:25000,taxes:0,nights:5});
+ const [form,setForm]=useState({hotel:"Marriott Bonvoy",cash:25000,taxes:0,awardPoints:25000,nights:5});
  useEffect(()=>{getSupabase().auth.getUser().then(async({data})=>{if(!data.user)return;const sb=getSupabase();const[{data:w},{data:r}]=await Promise.all([sb.from("wallet_cards").select("*").eq("user_id",data.user.id).order("created_at"),sb.from("reward_rules").select("*").eq("active",true).order("issuer").order("partner")]);setWallet(w||[]);if(r?.length)setRewardRules(r)})},[]);
  const partner=form.hotel;
  const hotelRules=rewardRules.filter(r=>r.partner===partner&&r.partner_type==="hotel_transfer"&&r.route_status==="verified");
@@ -109,18 +109,17 @@ function HotelSearch(){
  const selected=hotelRules[0];
  const ratio=selected?Number(selected.transfer_ratio):0;
  const receivedPerMR=ratio>0?1/ratio:0;
- const amexPoints=receivedPerMR>0?Math.ceil(net/1):0;
- const maxHotelPoints=amex?Number(amex.points||0)*receivedPerMR:0;
- const requiredMR=selected?Math.ceil(net*ratio):0;
+ const awardPoints=Math.max(0,Number(form.awardPoints)||0);
+ const requiredMR=selected&&receivedPerMR>0?Math.ceil(awardPoints/receivedPerMR):0;
+ const maxHotelPoints=amex?Math.floor(Number(amex.points||0)*receivedPerMR):0;
  const enough=Boolean(amex&&requiredMR<=Number(amex.points||0));
- const hotelPointRate=selected?ratio:0;
  const cardDirect=directRules.map(r=>{const card=wallet.find(w=>cardMatchesRule(w.card_name,r));if(!card)return null;const value=Math.min(net,Number(card.points||0)*Number(r.redemption_value||0));const pts=value>0?Math.ceil(value/Number(r.redemption_value||1)):0;return {card:card.card_name,pointsUsed:pts,value,effective:Number(r.redemption_value),remaining:net-value,detail:r.notes};}).filter(Boolean);
  const transferLabel=selected?formatTransferRatio(selected):"";
  return <section className="toolCard"><div className="toolIntro"><div><span className="pill cyan">HOTEL REWARDS OPTIMISER</span><h3>Turn hotel prices into points decisions.</h3><p>Enter the cash price of a hotel stay. PointPilot converts it into the points needed through your verified hotel-transfer routes and compares direct travel redemptions from your wallet.</p></div></div>
- <div className="searchGrid hotelGrid"><label>Hotel programme<select value={form.hotel} onChange={e=>setForm({...form,hotel:e.target.value})}><option>Marriott Bonvoy</option><option>Hilton Honors</option></select></label><label>Stay price (₹)<input type="number" min="0" value={form.cash} onChange={e=>setForm({...form,cash:e.target.value})}/></label><label>Taxes & fees (₹)<input type="number" min="0" value={form.taxes} onChange={e=>setForm({...form,taxes:e.target.value})}/></label><label>Nights<input type="number" min="1" value={form.nights} onChange={e=>setForm({...form,nights:e.target.value})}/></label></div>
+ <div className="searchGrid hotelGrid"><label>Hotel programme<select value={form.hotel} onChange={e=>setForm({...form,hotel:e.target.value})}><option>Marriott Bonvoy</option><option>Hilton Honors</option></select></label><label>Stay price (₹)<input type="number" min="0" value={form.cash} onChange={e=>setForm({...form,cash:e.target.value})}/></label><label>Taxes & fees (₹)<input type="number" min="0" value={form.taxes} onChange={e=>setForm({...form,taxes:e.target.value})}/></label><label>Hotel award points required<input type="number" min="0" value={form.awardPoints} onChange={e=>setForm({...form,awardPoints:e.target.value})}/></label><label>Nights<input type="number" min="1" value={form.nights} onChange={e=>setForm({...form,nights:e.target.value})}/></label></div>
  <div className="hotelPlanner"><div className="hotelHero"><small>NET HOTEL VALUE</small><strong>₹{Math.round(net).toLocaleString("en-IN")}</strong><span>{form.nights} night{Number(form.nights)==1?"":"s"} • {partner}</span></div>
- <div className="hotelOptions"><article><small>AMEX PLATINUM TRAVEL → {partner.toUpperCase()}</small><strong>{selected?requiredMR.toLocaleString("en-IN")+" MR points":"Route unavailable"}</strong><span>{selected?("Transfer "+transferLabel+" • "+Math.round(requiredMR*receivedPerMR).toLocaleString("en-IN")+" "+partner+" points"): "No verified route loaded."}</span>{selected&&<em>{enough?"Your Amex balance covers this illustrative hotel value.":"Your current Amex balance does not cover this illustrative hotel value."}</em>}</article>{cardDirect.map((r,i)=><article key={r.card+i}><small>{r.card.toUpperCase()} → DIRECT TRAVEL</small><strong>₹{Math.round(r.value).toLocaleString("en-IN")} value</strong><span>{r.pointsUsed.toLocaleString("en-IN")} points • ₹{r.effective.toFixed(2)}/point</span><em>₹{Math.round(r.remaining).toLocaleString("en-IN")} cash remaining</em></article>)}</div></div>
- <div className="notice">Hotel points are calculated from the verified card→programme transfer ratio. This is a value-planning calculation, not confirmed award availability. Hotel award pricing, taxes and resort fees must be checked with the loyalty programme before booking.</div>
+ <div className="hotelOptions"><article><small>AMEX PLATINUM TRAVEL → {partner.toUpperCase()}</small><strong>{selected?requiredMR.toLocaleString("en-IN")+" MR points":"Route unavailable"}</strong><span>{selected?("Transfer "+transferLabel+" • "+awardPoints.toLocaleString("en-IN")+" "+partner+" points"): "No verified route loaded."}</span>{selected&&<em>{enough?"Your Amex balance covers the requested award points.":"Your current Amex balance does not cover the requested award points."}</em>}</article>{cardDirect.map((r,i)=><article key={r.card+i}><small>{r.card.toUpperCase()} → DIRECT TRAVEL</small><strong>₹{Math.round(r.value).toLocaleString("en-IN")} value</strong><span>{r.pointsUsed.toLocaleString("en-IN")} points • ₹{r.effective.toFixed(2)}/point</span><em>₹{Math.round(r.remaining).toLocaleString("en-IN")} cash remaining</em></article>)}</div></div>
+ <div className="notice">Enter the actual award points shown by Marriott/Hilton. PointPilot converts those award points into the Membership Rewards required using the verified transfer ratio. Cash price is used only to calculate the redemption value; award availability, taxes and resort fees are not inferred.</div>
  </section>
 }
 function ValueEngine(){
