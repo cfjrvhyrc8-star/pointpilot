@@ -55,3 +55,17 @@ values
 ('IDFC FIRST Bank','Mayura','IDFC FIRST Reward Points','IDFC FIRST Travel & Shop','direct_travel',0.50,'INR','https://www.idfcfirstbank.com/content/dam/idfcfirstbank/pdf/Mayura-CC-Rewards-Structure-TnC-28-05-25.pdf','2025-05-28','2026-09-21 00:00:00+00','1 Reward Point = ₹0.50 for hotel and flight bookings through Travel & Shop; 1 RP = ₹0.25 elsewhere.','verified','high','https://www.idfcfirstbank.com/','issuer'),
 ('IDFC FIRST Bank','Wealth','IDFC FIRST Reward Points','IDFC FIRST Rewards','direct_travel',0.25,'INR','https://www.idfcfirstbank.com/content/dam/idfcfirstbank/pdf/Wealth-CC-Rewards-Structure-TnC-28-05-25-copy.pdf','2025-05-28','2026-09-21 00:00:00+00','Current Wealth reward terms state 1 Reward Point = ₹0.25; no airline/hotel transfer ratio is activated here.','verified','high','https://www.idfcfirstbank.com/','issuer'),
 ('OneCard','OneCard','OneCard Reward Points','OneStore Gift Cards','voucher',null,'INR','https://www.getonecard.app/legal/store_tnc/','2026-09-21','2026-09-21 00:00:00+00','OneStore terms allow reward points for up to 50% of eligible order value; the conversion rate may be revised by the issuer, so PointPilot must read the live catalogue before valuing it.','dynamic_rate','high','https://www.getonecard.app/','issuer');
+
+
+-- Card catalogue: detailed issuer-verified metadata for the wallet detail view.
+create table if not exists public.card_catalog (
+ id uuid primary key default gen_random_uuid(), issuer text not null, card_name text not null,
+ network text, annual_fee numeric, joining_fee numeric, forex_markup numeric,
+ base_reward text, accelerated_reward text, lounge_benefit text, travel_benefit text,
+ milestone_benefit text, key_benefits jsonb not null default '[]'::jsonb,
+ reward_currency text, redemption_summary text, source_url text, verified_at timestamptz,
+ active boolean not null default true, unique(issuer, card_name)
+);
+alter table public.card_catalog enable row level security;
+create policy "card catalog public read" on public.card_catalog for select to anon,authenticated using(active=true);
+create index if not exists card_catalog_card_idx on public.card_catalog(card_name);
