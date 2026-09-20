@@ -1,5 +1,5 @@
 import {NextResponse} from "next/server";
-import {travelportConfigured,searchFlights,searchHotels} from "@/lib/travel-provider";
+import {travelportConfigured,searchFlights,searchHotels} from "../../../lib/travel-provider.js";
 
 export async function GET(){
   return NextResponse.json({
