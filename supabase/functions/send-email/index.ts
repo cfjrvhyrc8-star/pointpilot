@@ -38,7 +38,28 @@ Deno.serve(async (req) => {
 
   try {
     const wh = new Webhook(hookSecret);
-    const { user, email_data } = wh.verify(payload, headers) as {
+    let verified;
+    try {
+      verified = wh.verify(payload, headers) as {
+        user: { email: string };
+        email_data: {
+          token: string;
+          token_hash: string;
+          redirect_to: string;
+          email_action_type: string;
+          site_url: string;
+        };
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Invalid hook signature";
+      console.error("send-email hook signature error:", error);
+      return Response.json(
+        { error: { http_code: 401, message } },
+        { status: 401 },
+      );
+    }
+
+    const { user, email_data } = verified as {
       user: { email: string };
       email_data: {
         token: string;
@@ -86,11 +107,11 @@ Deno.serve(async (req) => {
 
     return Response.json({});
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Email hook failed";
-    console.error("send-email hook error:", error);
+    const message = error instanceof Error ? error.message : "Email provider failed";
+    console.error("send-email provider error:", error);
     return Response.json(
-      { error: { http_code: 401, message } },
-      { status: 401 },
+      { error: { http_code: 500, message } },
+      { status: 500 },
     );
   }
 });
