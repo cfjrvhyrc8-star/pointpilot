@@ -95,16 +95,34 @@ function FlightSearch(){
 }
 
 function HotelSearch(){
- const [form,setForm]=useState({cityCode:"DXB",checkInDate:"2026-12-15",checkOutDate:"2026-12-20",adults:2}); const [state,setState]=useState({status:"idle",data:null,error:""});
- const submit=async e=>{e.preventDefault();setState({status:"loading",data:null,error:""});try{const r=await fetch("/api/optimize",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:"hotel",...form})});const d=await r.json();if(!r.ok||["error","provider_error"].includes(d.status))throw new Error(d.message||d.error||"Hotel provider returned an error");setState({status:d.status,data:d,error:""});}catch(err){setState({status:"error",data:null,error:err.message})}};
- const hotels=state.data?.data?.data||[];
- return <section className="toolCard"><div className="toolIntro"><div><span className="pill cyan">LIVE HOTEL SEARCH</span><h3>See real hotel offers.</h3><p>Hotel search is kept separate from flights so PointPilot can add a dedicated hotel/stays provider without coupling the rewards engine to one inventory source.</p></div></div>
- <form className="searchGrid hotelGrid" onSubmit={submit}><label>City code<input value={form.cityCode} onChange={e=>setForm({...form,cityCode:e.target.value.toUpperCase()})} maxLength={3}/><small>Example: DXB, DEL, LHR</small></label><label>Check-in<input type="date" value={form.checkInDate} onChange={e=>setForm({...form,checkInDate:e.target.value})}/></label><label>Check-out<input type="date" value={form.checkOutDate} onChange={e=>setForm({...form,checkOutDate:e.target.value})}/></label><label>Adults<input type="number" min="1" max="9" value={form.adults} onChange={e=>setForm({...form,adults:e.target.value})}/></label><button className="btn primary searchBtn" disabled={state.status==="loading"}>{state.status==="loading"?"Searching…":"Search hotels →"}</button></form>
- {state.status==="not_configured"&&<div className="notice">Hotel live search is not enabled yet. PointPilot will add a dedicated stays provider next.</div>}{state.status==="error"&&<div className="errorBox">{state.error}</div>}
- {state.status==="live"&&<div className="results"><div className="resultMeta"><b>{hotels.length} live offers</b><span>Provider: Amadeus • fetched {new Date().toLocaleTimeString()}</span></div>{hotels.map((o,i)=><article className="result" key={o.id||i}><div><strong>{o.hotel?.name||"Hotel offer"}</strong><span>{o.hotel?.rating?o.hotel.rating+"★ • ":""}{o.hotel?.cityCode||form.cityCode}</span></div><div className="resultRight"><b>{o.offers?.[0]?.price?.currency} {Number(o.offers?.[0]?.price?.total||0).toLocaleString("en-IN")}</b><span>{o.offers?.[0]?.room?.typeEstimated?.category||"Room offer"}</span></div></article>)}</div>}
+ const [wallet,setWallet]=useState([]);
+ const [rewardRules,setRewardRules]=useState(FALLBACK_REWARD_RULES);
+ const [form,setForm]=useState({hotel:"Marriott Bonvoy",cash:25000,taxes:0,nights:5});
+ useEffect(()=>{getSupabase().auth.getUser().then(async({data})=>{if(!data.user)return;const sb=getSupabase();const[{data:w},{data:r}]=await Promise.all([sb.from("wallet_cards").select("*").eq("user_id",data.user.id).order("created_at"),sb.from("reward_rules").select("*").eq("active",true).order("issuer").order("partner")]);setWallet(w||[]);if(r?.length)setRewardRules(r)})},[]);
+ const partner=form.hotel;
+ const hotelRules=rewardRules.filter(r=>r.partner===partner&&r.partner_type==="hotel_transfer"&&r.route_status==="verified");
+ const directRules=rewardRules.filter(r=>r.partner_type==="direct_travel"&&r.route_status==="verified");
+ const cash=Math.max(0,Number(form.cash)||0);
+ const taxes=Math.max(0,Number(form.taxes)||0);
+ const net=Math.max(0,cash-taxes);
+ const amex=wallet.find(w=>String(w.card_name||"").toLowerCase().includes("platinum travel"));
+ const selected=hotelRules[0];
+ const ratio=selected?Number(selected.transfer_ratio):0;
+ const receivedPerMR=ratio>0?1/ratio:0;
+ const amexPoints=receivedPerMR>0?Math.ceil(net/1):0;
+ const maxHotelPoints=amex?Number(amex.points||0)*receivedPerMR:0;
+ const requiredMR=selected?Math.ceil(net*ratio):0;
+ const enough=Boolean(amex&&requiredMR<=Number(amex.points||0));
+ const hotelPointRate=selected?ratio:0;
+ const cardDirect=directRules.map(r=>{const card=wallet.find(w=>cardMatchesRule(w.card_name,r));if(!card)return null;const value=Math.min(net,Number(card.points||0)*Number(r.redemption_value||0));const pts=value>0?Math.ceil(value/Number(r.redemption_value||1)):0;return {card:card.card_name,pointsUsed:pts,value,effective:Number(r.redemption_value),remaining:net-value,detail:r.notes};}).filter(Boolean);
+ const transferLabel=selected?formatTransferRatio(selected):"";
+ return <section className="toolCard"><div className="toolIntro"><div><span className="pill cyan">HOTEL REWARDS OPTIMISER</span><h3>Turn hotel prices into points decisions.</h3><p>Enter the cash price of a hotel stay. PointPilot converts it into the points needed through your verified hotel-transfer routes and compares direct travel redemptions from your wallet.</p></div></div>
+ <div className="searchGrid hotelGrid"><label>Hotel programme<select value={form.hotel} onChange={e=>setForm({...form,hotel:e.target.value})}><option>Marriott Bonvoy</option><option>Hilton Honors</option></select></label><label>Stay price (₹)<input type="number" min="0" value={form.cash} onChange={e=>setForm({...form,cash:e.target.value})}/></label><label>Taxes & fees (₹)<input type="number" min="0" value={form.taxes} onChange={e=>setForm({...form,taxes:e.target.value})}/></label><label>Nights<input type="number" min="1" value={form.nights} onChange={e=>setForm({...form,nights:e.target.value})}/></label></div>
+ <div className="hotelPlanner"><div className="hotelHero"><small>NET HOTEL VALUE</small><strong>₹{Math.round(net).toLocaleString("en-IN")}</strong><span>{form.nights} night{Number(form.nights)==1?"":"s"} • {partner}</span></div>
+ <div className="hotelOptions"><article><small>AMEX PLATINUM TRAVEL → {partner.toUpperCase()}</small><strong>{selected?requiredMR.toLocaleString("en-IN")+" MR points":"Route unavailable"}</strong><span>{selected?("Transfer "+transferLabel+" • "+Math.round(requiredMR*receivedPerMR).toLocaleString("en-IN")+" "+partner+" points"): "No verified route loaded."}</span>{selected&&<em>{enough?"Your Amex balance covers this illustrative hotel value.":"Your current Amex balance does not cover this illustrative hotel value."}</em>}</article>{cardDirect.map((r,i)=><article key={r.card+i}><small>{r.card.toUpperCase()} → DIRECT TRAVEL</small><strong>₹{Math.round(r.value).toLocaleString("en-IN")} value</strong><span>{r.pointsUsed.toLocaleString("en-IN")} points • ₹{r.effective.toFixed(2)}/point</span><em>₹{Math.round(r.remaining).toLocaleString("en-IN")} cash remaining</em></article>)}</div></div>
+ <div className="notice">Hotel points are calculated from the verified card→programme transfer ratio. This is a value-planning calculation, not confirmed award availability. Hotel award pricing, taxes and resort fees must be checked with the loyalty programme before booking.</div>
  </section>
 }
-
 function ValueEngine(){
  const [v,setV]=useState({cash:50000,taxes:5000,points:50000}); const net=Math.max(0,Number(v.cash)-Number(v.taxes)); const per=Number(v.points)>0?net/Number(v.points):0;
  return <section className="toolCard"><div className="toolIntro"><div><span className="pill coral">REDEMPTION MATH</span><h3>Calculate your real ₹/point.</h3><p>Net cash value saved divided by the original points consumed. Taxes and fees remain visible.</p></div></div><div className="valueLayout"><div className="valueInputs"><label>Cash price (₹)<input type="number" min="0" value={v.cash} onChange={e=>setV({...v,cash:e.target.value})}/></label><label>Taxes & fees (₹)<input type="number" min="0" value={v.taxes} onChange={e=>setV({...v,taxes:e.target.value})}/></label><label>Points used<input type="number" min="0" value={v.points} onChange={e=>setV({...v,points:e.target.value})}/></label></div><div className="valueResult"><small>NET CASH VALUE</small><strong>{money(net)}</strong><span>÷ {Number(v.points||0).toLocaleString("en-IN")} points</span><div className="bigRate">₹{per.toFixed(2)}<small>/ point</small></div></div></div></section>
