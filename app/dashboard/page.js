@@ -50,7 +50,8 @@ function buildRewardOptions(wallet,cashFare,airline,rules){
 
 function FlightSearch(){
  const [wallet,setWallet]=useState([]);
- useEffect(()=>{getSupabase().auth.getUser().then(async({data})=>{if(!data.user)return;const{data:w}=await getSupabase().from("wallet_cards").select("*").eq("user_id",data.user.id).order("created_at");setWallet(w||[])})},[]);
+ const [rewardRules,setRewardRules]=useState(FALLBACK_REWARD_RULES);
+ useEffect(()=>{getSupabase().auth.getUser().then(async({data})=>{if(!data.user)return;const sb=getSupabase();const[{data:w},{data:r}]=await Promise.all([sb.from("wallet_cards").select("*").eq("user_id",data.user.id).order("created_at"),sb.from("reward_rules").select("*").eq("active",true).order("issuer").order("partner")]);setWallet(w||[]);if(r?.length)setRewardRules(r)})},[]);
  const [form,setForm]=useState({origin:"BOM",destination:"LHR",departureDate:"2026-12-15",returnDate:"2026-12-22",adults:1,cabin:"BUSINESS"});
  const [state,setState]=useState({status:"idle",data:null,error:""}); const [roundTrip,setRoundTrip]=useState(true);
  const submit=async e=>{e.preventDefault();setState({status:"loading",data:null,error:""});try{const r=await fetch("/api/optimize",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:"flight",...form,returnDate:roundTrip?form.returnDate:""})});const d=await r.json();if(!r.ok||["error","provider_error","not_configured"].includes(d.status))throw new Error(d.message||d.error||"Flight provider returned an error");setState({status:d.status,data:d,error:""});}catch(err){setState({status:"error",data:null,error:err.message})}};
