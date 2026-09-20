@@ -15,9 +15,9 @@ const FALLBACK_REWARD_RULES=[
  {issuer:"American Express India",card_name:"Platinum Travel",currency:"Membership Rewards",partner:"Hilton Honors",partner_type:"hotel_transfer",transfer_ratio:0.6666666667,route_status:"verified",confidence:"medium",notes:"1 Membership Reward point = 1.5 Hilton Honors points. Current 2026 base route; promotional rates are not used.",verified_at:"2026-09-21"}
 ];
 function cardMatchesRule(cardName,rule){
- const n=String(cardName||"").toLowerCase();
- const target=String(rule?.card_name||"").toLowerCase();
- return target && (n.includes(target)||target.includes(n.replace(/credit card|metal card|card/g,"").trim()));
+ const clean=v=>String(v||"").toLowerCase().replace(/credit card|metal card|card|club|first|hdfc|icici|idfc|bank|american express india|scapia federal|federal/g,"").replace(/[^a-z0-9]/g,"");
+ const n=clean(cardName),target=clean(rule?.card_name);
+ return Boolean(target&&(n.includes(target)||target.includes(n)));
 }
 function rulesForCard(cardName,rules){
  return (rules||[]).filter(r=>cardMatchesRule(cardName,r));
