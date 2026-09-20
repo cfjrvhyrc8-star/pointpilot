@@ -31,11 +31,17 @@ export async function POST(req){
         return NextResponse.json({status:"live",provider:"Travelport",data:result.data});
 
       const providerMessage=
+        result.data?.error_description||
+        result.data?.error||
         result.data?.errors?.[0]?.message||
         result.data?.errors?.[0]?.detail||
+        result.data?.errors?.[0]?.error_description||
+        result.data?.Error?.[0]?.Message||
+        result.data?.Error?.[0]?.message||
         result.data?.Result?.Error?.[0]?.Message||
         result.data?.Result?.Error?.[0]?.message||
         result.data?.Result?.errors?.[0]?.message||
+        result.data?.detail||
         result.data?.faultstring||
         result.data?.message||
         "Travelport returned an error.";
@@ -44,7 +50,7 @@ export async function POST(req){
         status:"provider_error",
         provider:"Travelport",
         code:result.status,
-        message:providerMessage,
+        message:String(providerMessage),
         data:result.data
       },{status:502});
     }
