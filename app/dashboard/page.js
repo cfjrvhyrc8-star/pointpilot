@@ -95,9 +95,9 @@ function FlightSearch(){
 }
 
 function HotelSearch(){
- const [wallet,setWallet]=useState([]),[rewardRules,setRewardRules]=useState(FALLBACK_REWARD_RULES),[catalog,setCatalog]=useState([]),[live,setLive]=useState({status:"idle",data:null,error:""});
+ const [wallet,setWallet]=useState([]),[rewardRules,setRewardRules]=useState(FALLBACK_REWARD_RULES),[live,setLive]=useState({status:"idle",data:null,error:""});
  const [form,setForm]=useState({city:"BOM",checkIn:"2026-12-15",checkOut:"2026-12-18",adults:2,rooms:1,children:0,hotel:"",cash:25000,taxes:0,awardPoints:25000,nights:3});
- useEffect(()=>{getSupabase().auth.getUser().then(async({data})=>{if(!data.user)return;const sb=getSupabase();const[{data:w},{data:r},{data:c}]=await Promise.all([sb.from("wallet_cards").select("*").eq("user_id",data.user.id).order("created_at"),sb.from("reward_rules").select("*").eq("active",true).order("issuer").order("partner"),sb.from("card_catalog").select("*").eq("active",true).order("issuer").order("card_name")]);setWallet(w||[]);if(r?.length)setRewardRules(r);setCatalog(c||[])})},[]);
+ useEffect(()=>{getSupabase().auth.getUser().then(async({data})=>{if(!data.user)return;const sb=getSupabase();const[{data:w},{data:r}]=await Promise.all([sb.from("wallet_cards").select("*").eq("user_id",data.user.id).order("created_at"),sb.from("reward_rules").select("*").eq("active",true).order("issuer").order("partner")]);setWallet(w||[]);if(r?.length)setRewardRules(r)})},[]);
  const [programme,setProgramme]=useState("Marriott Bonvoy");
  const hotelRules=rewardRules.filter(r=>r.partner===programme&&r.partner_type==="hotel_transfer"&&r.route_status==="verified");
  const directRules=rewardRules.filter(r=>r.partner_type==="direct_travel"&&r.route_status==="verified");
@@ -108,14 +108,57 @@ function HotelSearch(){
  const maxHotelPoints=amex?Math.floor(Number(amex.points||0)*receivedPerMR):0;
  const enough=Boolean(amex&&requiredMR<=Number(amex.points||0));
  const cardDirect=directRules.map(r=>{const card=wallet.find(w=>cardMatchesRule(w.card_name,r));if(!card)return null;const value=Math.min(net,Number(card.points||0)*Number(r.redemption_value||0));const pts=value>0?Math.ceil(value/Number(r.redemption_value||1)):0;return{card:card.card_name,pointsUsed:pts,value,effective:Number(r.redemption_value),remaining:net-value,detail:r.notes}}).filter(Boolean);
- const runHotel=async e=>{e.preventDefault();setLive({status:"loading",data:null,error:""});try{const r=await fetch("/api/optimize",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:"hotel",...form})});const d=await r.json();if(d.status==="live"){setLive({status:"live",data:d.data,error:""});return}if(d.status==="not_configured"){setLive({status:"not_configured",data:null,error:d.message||"Hotel inventory is not provisioned yet."});return}throw new Error(d.message||"Hotel provider returned an error")}catch(err){setLive({status:"error",data:null,error:err.message})}};
- const walk=(node,fn,path=[])=>{if(!node||typeof node!=="object")return;if(Array.isArray(node)){node.forEach((x,i)=>walk(x,fn,path.concat(i)));return}fn(node,path);Object.entries(node).forEach(([k,v])=>{if(v&&typeof v==="object")walk(v,fn,path.concat(k))})};
- const liveItems=useMemo(()=>{if(!live.data)return[];const root=live.data?.hotelsResponse||live.data?.HotelSearchResponse||live.data;const hotels=root?.hotels||root?.propertyItems||root?.PropertyItems||[];const rows=[];hotels.forEach((hotel)=>{const info=hotel?.propertyInfo||hotel?.PropertyInfo||hotel;const name=info?.propertyName||info?.name||hotel?.propertyName||hotel?.name||"Hotel";const rates=hotel?.rates||hotel?.Rates||hotel?.rateOptions||[];rates.forEach((rate)=>{const pricing=rate?.pricing||rate?.Pricing||{};const total=pricing?.total||rate?.total||rate?.Total||rate?.price||rate?.Price;const value=typeof total==="object"?(total?.value??total?.Value):total;const currency=typeof total==="object"?(total?.currencyCode??total?.CurrencyCode??"INR"):"INR";const room=rate?.roomType?.name||rate?.roomType?.Name||rate?.roomName||"Room";const rules=rate?.rateRules||rate?.RateRules||{};const cancel=rules?.cancelPolicy||rules?.CancelPolicy;const promo=rate?.promotion||rate?.promotions||rate?.Promotion||rate?.Promotions||rate?.ratePlan?.name||rate?.RatePlan?.Name;rows.push({name,room,value,currency,cancel,promo,rateKey:rate?.rateKey||rate?.RateKey})})});if(rows.length)return rows.slice(0,40);const found=[];walk(live.data,(o)=>{const name=o.propertyName||o.name||o.HotelName||o.PropertyName;const total=o?.pricing?.total||o.total||o.Total||o.amount||o.Amount;if(name&&total&&found.length<20)found.push({name,room:"Rate",value:typeof total==="object"?total.value:total,currency:typeof total==="object"?(total.currencyCode||"INR"):"INR"});});return found},[live.data]);
- return <section className="toolCard"><div className="toolIntro"><div><span className="pill cyan">LIVE HOTEL INVENTORY</span><h3>Search hotels, then turn rates into points decisions.</h3><p>PointPilot is wired for Travelport Stays SearchComplete. Once Stays access is provisioned, this tab will return live property/rate data; the rewards planner remains available even before that connection is enabled.</p></div></div>
+
+ const runHotel=async e=>{e.preventDefault();setLive({status:"loading",data:null,error:""});try{const r=await fetch("/api/optimize",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:"hotel",checkInDate:form.checkIn,checkOutDate:form.checkOut,cityCode:form.city,propertyName:form.hotel,adults:form.adults,rooms:form.rooms,children:form.children})});const d=await r.json();if(d.status==="live"){setLive({status:"live",data:d.data,error:""});return}if(d.status==="not_configured"){setLive({status:"not_configured",data:null,error:d.message||"Hotel inventory is not provisioned yet."});return}throw new Error(d.message||"Hotel provider returned an error")}catch(err){setLive({status:"error",data:null,error:err.message})}};
+
+ const firstOf=(...v)=>v.find(x=>x!==undefined&&x!==null&&x!=="");
+ const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null};
+ const text=v=>typeof v==="string"?v:(v?.value??v?.Value??v?.name??v?.Name??"");
+ const liveItems=useMemo(()=>{
+   if(!live.data)return[];
+   const root=live.data?.hotelsResponse||live.data?.HotelSearchResponse||live.data;
+   const hotels=root?.hotels||root?.propertyItems||root?.PropertyItems||[];
+   const rows=[];
+   hotels.forEach(hotel=>{
+     const info=hotel?.propertyInfo||hotel?.PropertyInfo||hotel;
+     const name=firstOf(info?.propertyName,info?.name,hotel?.propertyName,hotel?.name,"Hotel");
+     const rating=num(firstOf(info?.rating,info?.starRating,info?.Rating,hotel?.rating,hotel?.starRating));
+     const address=firstOf(hotel?.location?.address,hotel?.location?.Address,info?.address,hotel?.address);
+     const images=hotel?.images||hotel?.Images||info?.images||[];
+     const image=firstOf(images?.[0]?.url,images?.[0]?.URL,images?.[0]?.value,images?.[0],hotel?.imageURL,hotel?.imageUrl);
+     const rates=hotel?.rates||hotel?.Rates||hotel?.rateOptions||[];
+     rates.forEach(rate=>{
+       const pricing=rate?.pricing||rate?.Pricing||{};
+       const total=pricing?.total||rate?.total||rate?.Total||rate?.price||rate?.Price||{};
+       const base=firstOf(pricing?.base?.value,pricing?.base?.Value,rate?.base?.value,rate?.base);
+       const tax=firstOf(pricing?.totalTaxes?.value,pricing?.totalTaxes?.Value,rate?.totalTaxes?.value,rate?.totalTaxes);
+       const fees=firstOf(pricing?.totalFees?.value,pricing?.totalFees?.Value,rate?.totalFees?.value,rate?.totalFees);
+       const offer=num(typeof total==="object"?firstOf(total?.value,total?.Value):total);
+       const currency=typeof total==="object"?firstOf(total?.currencyCode,total?.CurrencyCode,"INR"):"INR";
+       const room=firstOf(rate?.roomType?.name,rate?.roomType?.Name,rate?.roomName,rate?.room?.name,"Room");
+       const rules=rate?.rateRules||rate?.RateRules||{};
+       const cancel=firstOf(rules?.cancelPolicy?.description,rules?.cancelPolicy?.Description,rules?.cancelPolicy,rules?.CancelPolicy?.description,rules?.CancelPolicy);
+       const promo=firstOf(rate?.promotion?.description,rate?.promotion?.name,rate?.promotions?.[0]?.description,rate?.Promotions?.[0]?.description,rate?.ratePlan?.name,rate?.RatePlan?.Name);
+       const breakfast=firstOf(rate?.breakfastIncluded,rate?.mealPlan?.name,rate?.mealPlan?.Name,hotel?.breakfastIncluded);
+       const original=num(firstOf(rate?.originalPrice?.value,rate?.originalPrice,rate?.rackRate?.value,rate?.rackRate,rate?.strikethroughPrice?.value,rate?.strikethroughPrice));
+       const discount=original&&offer&&original>offer?Math.round((1-offer/original)*100):null;
+       rows.push({name,rating,address,image,room,value:offer,original,currency,discount,base:num(base),tax:num(tax),fees:num(fees),cancel,promo,breakfast,rateKey:firstOf(rate?.rateKey,rate?.RateKey),propertyKey:firstOf(hotel?.propertyKey,hotel?.PropertyKey)});
+     });
+   });
+   return rows.filter(x=>x.value!==null).sort((a,b)=>(a.value||0)-(b.value||0)).slice(0,40);
+ },[live.data]);
+
+ const formatRate=x=>x.value===null?"Rate unavailable":(x.currency==="INR"?"₹":x.currency+" ")+Number(x.value).toLocaleString("en-IN");
+ const pointPanel=x=>{
+   const best=cardDirect.slice().sort((a,b)=>b.value-a.value)[0];
+   const summary=best?"Using "+best.card+" saves up to ₹"+Math.round(best.value).toLocaleString("en-IN")+" at ₹"+best.effective.toFixed(2)+"/point.":"No verified direct hotel redemption is loaded for the cards in this wallet.";
+   return <div className="hotelPointPanel"><div><span className="pointEyebrow">POINTPILOT</span><strong>Pay cash vs use points</strong><small>{summary}</small></div><div className="pointDecision">{best?<><b>₹{Math.round(best.value).toLocaleString("en-IN")} saved</b><span>{best.pointsUsed.toLocaleString("en-IN")} pts • ₹{best.effective.toFixed(2)}/pt</span></>:<b>Cash route shown</b>}<span>Live hotel cash price: {formatRate(x)}</span></div></div>;
+ };
+ return <section className="toolCard"><div className="toolIntro"><div><span className="pill cyan">LIVE HOTEL INVENTORY</span><h3>Hotels that look like real booking results.</h3><p>Live cash rates from Travelport Stays, with room, offer, taxes, cancellation and a PointPilot cash-vs-points panel. Award availability is only shown when a live award source confirms it.</p></div></div>
  <form className="searchGrid hotelSearchGrid" onSubmit={runHotel}><label>City / airport<input value={form.city} maxLength="3" onChange={e=>setForm({...form,city:e.target.value.toUpperCase()})}/><small>IATA code, e.g. BOM</small></label><label>Check-in<input type="date" value={form.checkIn} onChange={e=>setForm({...form,checkIn:e.target.value})}/></label><label>Check-out<input type="date" value={form.checkOut} onChange={e=>setForm({...form,checkOut:e.target.value})}/></label><label>Adults<input type="number" min="1" max="9" value={form.adults} onChange={e=>setForm({...form,adults:e.target.value})}/></label><label>Rooms<input type="number" min="1" max="9" value={form.rooms} onChange={e=>setForm({...form,rooms:e.target.value})}/></label><label>Hotel name (optional)<input value={form.hotel} onChange={e=>setForm({...form,hotel:e.target.value})} placeholder="Marriott / Hilton / etc."/></label><button className="btn primary searchBtn" disabled={live.status==="loading"}>{live.status==="loading"?"Searching hotels…":"Search live hotels →"}</button></form>
  {live.status==="not_configured"&&<div className="notice"><b>Live inventory connection:</b> Travelport Stays requires separate account provisioning. The integration is ready, but PointPilot will not pretend hotel inventory is live until the provider grants access.</div>}
  {live.status==="error"&&<div className="errorBox">{live.error}</div>}
- {live.status==="live"&&<div className="results"><div className="resultMeta"><b>{liveItems.length} live cash hotel rates</b><span>Travelport Stays • fresh provider response</span></div>{liveItems.length?liveItems.slice(0,20).map((x,i)=><article className="result hotelResult" key={x.rateKey||i}><div><strong>{x.name}</strong><span>{x.room} {x.promo?("• "+x.promo):""}</span>{x.cancel&&<span>Cancellation terms available • check rate rules before booking</span>}</div><div className="resultRight"><b>{x.currency==="INR"?"₹":x.currency+" "}{x.value!=null?Number(x.value).toLocaleString("en-IN"):"Rate available"}</b><span>Live cash rate • offer/room specific</span></div></article>):<div className="notice">Travelport returned the search successfully but no rate objects were returned for display. Check the provider response and provisioning.</div>}</div>}
+ {live.status==="live"&&<div className="hotelResults"><div className="resultMeta"><b>{liveItems.length} live cash offers</b><span>Travelport Stays • fresh provider response</span></div>{liveItems.length?liveItems.map((x,i)=><article className="hotelCard" key={x.rateKey||i}><div className="hotelPhoto">{x.image?<img src={x.image} alt="" loading="lazy"/>:<div className="hotelPhotoFallback">🏨</div>}</div><div className="hotelMain"><div className="hotelTop"><div><h4>{x.name}</h4><div className="hotelMeta">{x.rating?<>{"★".repeat(Math.min(5,Math.round(x.rating)))} <span>{x.rating} star</span></>:<span>Hotel</span>}{x.address&&<span> • {text(x.address)}</span>}</div></div>{x.discount&&<b className="discountBadge">{x.discount}% OFF</b>}</div><div className="hotelRoom"><strong>{x.room}</strong>{x.promo&&<span className="promoBadge">{x.promo}</span>}{x.breakfast&&<span>🥐 {text(x.breakfast)}</span>}</div><div className="hotelTerms">{x.cancel?<span>✓ {text(x.cancel)}</span>:<span>Cancellation policy available</span>}{x.base!==null&&<span>Base {formatRate({...x,value:x.base})}</span>}{x.tax!==null&&<span>Taxes {formatRate({...x,value:x.tax})}</span>}{x.fees!==null&&<span>Fees {formatRate({...x,value:x.fees})}</span>}</div></div><div className="hotelPrice"><small>OFFER PRICE</small>{x.original&&x.original>x.value&&<del>{formatRate({...x,value:x.original})}</del>}<strong>{formatRate(x)}</strong><span>Taxes & fees shown in the rate breakdown</span><b>Pay cash →</b></div><div className="hotelPointWrap">{pointPanel(x)}</div></article>):<div className="notice">Travelport returned a successful response but no displayable hotel rate objects. Check the provider response and provisioning.</div>}</div>}
  <div className="plannerDivider"><span>REWARDS PLANNER</span></div>
  <div className="plannerHeader"><div><h4>Hotel award calculator</h4><p>Use the actual award points shown by Marriott or Hilton. PointPilot then calculates the Membership Rewards required using the verified transfer route.</p></div><div className="miniStat"><small>AMEX MR AVAILABLE</small><strong>{amex?Number(amex.points).toLocaleString("en-IN"):"—"}</strong></div></div>
  <div className="searchGrid hotelGrid"><label>Hotel programme<select value={programme} onChange={e=>setProgramme(e.target.value)}><option>Marriott Bonvoy</option><option>Hilton Honors</option></select></label><label>Stay price (₹)<input type="number" min="0" value={form.cash} onChange={e=>setForm({...form,cash:e.target.value})}/></label><label>Taxes & fees (₹)<input type="number" min="0" value={form.taxes} onChange={e=>setForm({...form,taxes:e.target.value})}/></label><label>Award points required<input type="number" min="0" value={form.awardPoints} onChange={e=>setForm({...form,awardPoints:e.target.value})}/></label><label>Nights<input type="number" min="1" value={form.nights} onChange={e=>setForm({...form,nights:e.target.value})}/></label></div>
@@ -151,11 +194,13 @@ function CardDetails({wallet}){
 }
 
 export default function Dashboard(){
- const[wallet,setWallet]=useState([]),[ready,setReady]=useState(false),[tab,setTab]=useState("flights");
- useEffect(()=>{const supabase=getSupabase();supabase.auth.getUser().then(async({data})=>{if(!data.user){location.href="/login";return}const{data:w,error}=await supabase.from("wallet_cards").select("*").eq("user_id",data.user.id).order("created_at");if(error){console.error(error);setWallet([])}else{setWallet(w||[])}setReady(true)})},[]);
+ const[wallet,setWallet]=useState([]),[user,setUser]=useState(null),[ready,setReady]=useState(false),[tab,setTab]=useState("flights");
+ useEffect(()=>{const supabase=getSupabase();supabase.auth.getUser().then(async({data})=>{if(!data.user){location.href="/login";return}setUser(data.user);const{data:w,error}=await supabase.from("wallet_cards").select("*").eq("user_id",data.user.id).order("created_at");if(error){console.error(error);setWallet([])}else{setWallet(w||[])}setReady(true)})},[]);
  const total=useMemo(()=>wallet.reduce((a,x)=>a+Number(x.points||0),0),[wallet]);
+ const holderName=String(user?.user_metadata?.full_name||user?.user_metadata?.name||"").trim()||"Wallet holder";
+ const holderEmail=user?.email||"";
  if(!ready)return <main className="page"><div className="loader">Loading your wallet…</div></main>;
- return <main className="page"><nav className="nav"><b>Point<span>Pilot</span></b><button className="linkBtn" onClick={()=>getSupabase().auth.signOut().then(()=>location.href="/")}>Sign out</button></nav>
+ return <main className="page"><nav className="nav"><b>Point<span>Pilot</span></b><div className="navAccount"><div><strong>{holderName}</strong><small>{holderEmail}</small></div><button className="linkBtn" onClick={()=>getSupabase().auth.signOut().then(()=>location.href="/")}>Sign out</button></div>
  <section className="dashHero"><div><div className="eyebrow">YOUR REWARDS COMMAND CENTRE</div><h1>Make every point work harder.</h1><p>Start with what you hold. Then compare the trip you want.</p></div><div className="total"><small>TOTAL POINTS</small><strong>{total.toLocaleString("en-IN")}</strong><span>across {wallet.length} cards</span></div></section>
  <div className="quick"><button onClick={()=>setTab("flights")}>✈️ Flights<span>Live fare search →</span></button><button onClick={()=>setTab("hotels")}>🏨 Hotels<span>Hotel search →</span></button><button onClick={()=>setTab("value")}>₹ Value Engine<span>Calculate ₹/point →</span></button></div>
  <WalletSection wallet={wallet} setWallet={setWallet}/>
