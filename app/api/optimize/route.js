@@ -44,6 +44,7 @@ export async function POST(req){
         result.data?.detail||
         result.data?.faultstring||
         result.data?.message||
+        (result.data ? JSON.stringify(result.data).slice(0,900) : "")||
         "Travelport returned an error.";
 
       return NextResponse.json({
@@ -51,6 +52,7 @@ export async function POST(req){
         provider:"Travelport",
         code:result.status,
         message:String(providerMessage),
+        trackingId:result.trackingId||"",
         data:result.data
       },{status:502});
     }
