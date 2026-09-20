@@ -195,7 +195,7 @@ function CardDetails({wallet}){
 
 export default function Dashboard(){
  const[wallet,setWallet]=useState([]),[user,setUser]=useState(null),[ready,setReady]=useState(false),[tab,setTab]=useState("flights");
- useEffect(()=>{const supabase=getSupabase();supabase.auth.getUser().then(async({data})=>{if(!data.user){location.href="/login";return}setUser(data.user);const{data:w,error}=await supabase.from("wallet_cards").select("*").eq("user_id",data.user.id).order("created_at");if(error){console.error(error);setWallet([])}else{setWallet(w||[])}setReady(true)})},[]);
+ useEffect(()=>{const supabase=getSupabase();supabase.auth.getUser().then(async({data})=>{if(!data.user){location.href="/login";return}let current=data.user;const savedName=window.localStorage.getItem("pointpilot_holder_name");if(savedName&&!current.user_metadata?.full_name){const updated=await supabase.auth.updateUser({data:{full_name:savedName}});if(!updated.error&&updated.data?.user)current=updated.data.user}setUser(current);const{data:w,error}=await supabase.from("wallet_cards").select("*").eq("user_id",current.id).order("created_at");if(error){console.error(error);setWallet([])}else{setWallet(w||[])}setReady(true)})},[]);
  const total=useMemo(()=>wallet.reduce((a,x)=>a+Number(x.points||0),0),[wallet]);
  const holderName=String(user?.user_metadata?.full_name||user?.user_metadata?.name||"").trim()||"Wallet holder";
  const holderEmail=user?.email||"";
