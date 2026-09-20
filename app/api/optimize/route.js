@@ -1,7 +1,17 @@
 import {NextResponse} from "next/server";
 
 const BASE=process.env.AMADEUS_BASE_URL||"https://test.api.amadeus.com";
-async function token(){const b=new URLSearchParams({grant_type:"client_credentials",client_id:process.env.AMADEUS_CLIENT_ID||"",client_secret:process.env.AMADEUS_CLIENT_SECRET||""});const r=await fetch(BASE+"/v1/security/oauth2/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:b,cache:"no-store"});if(!r.ok)throw new Error("Amadeus authentication failed");return(await r.json()).access_token}
+async function token(){
+ const b=new URLSearchParams({grant_type:"client_credentials",client_id:process.env.AMADEUS_CLIENT_ID||"",client_secret:process.env.AMADEUS_CLIENT_SECRET||""});
+ const r=await fetch(BASE+"/v1/security/oauth2/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:b,cache:"no-store"});
+ const raw=await r.text(); let data; try{data=JSON.parse(raw)}catch{data={raw:raw.slice(0,500)}}
+ if(!r.ok)throw new Error(`Amadeus authentication failed (${r.status}): ${data?.error_description||data?.error||"check Client ID/Secret"}`);
+ if(!data?.access_token)throw new Error("Amadeus authentication returned no access token.");
+ return data.access_token
+}
+export async function GET(){
+ return NextResponse.json({ok:true,amadeusConfigured:Boolean(process.env.AMADEUS_CLIENT_ID&&process.env.AMADEUS_CLIENT_SECRET),baseUrl:BASE})
+}
 async function getJson(url,t){const r=await fetch(url,{headers:{Authorization:"Bearer "+t},cache:"no-store"});const text=await r.text();let data;try{data=JSON.parse(text)}catch{data={raw:text}}return{r,data}}
 export async function POST(req){try{const p=await req.json();if(!process.env.AMADEUS_CLIENT_ID||!process.env.AMADEUS_CLIENT_SECRET)return NextResponse.json({status:"not_configured",message:"Add Amadeus Client ID and Secret in Vercel Environment Variables to enable live travel search."});const t=await token();
 if(p.mode==="flight"){if(!p.departureDate)return NextResponse.json({status:"error",message:"Departure date is required."},{status:400});const u=new URL(BASE+"/v2/shopping/flight-offers");u.searchParams.set("originLocationCode",(p.origin||"BOM").toUpperCase());u.searchParams.set("destinationLocationCode",(p.destination||"LHR").toUpperCase());u.searchParams.set("departureDate",p.departureDate);if(p.returnDate)u.searchParams.set("returnDate",p.returnDate);u.searchParams.set("adults",String(p.adults||1));u.searchParams.set("travelClass",p.cabin||"ECONOMY");u.searchParams.set("currencyCode","INR");u.searchParams.set("max","10");const{r,data}=await getJson(u,t);return r.ok?NextResponse.json({status:"live",provider:"Amadeus",data}):NextResponse.json({status:"provider_error",code:r.status,data},{status:502})}
