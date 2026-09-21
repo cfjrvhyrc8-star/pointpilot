@@ -1,5 +1,5 @@
 import {NextResponse} from "next/server";
-import {travelportConfigured,searchFlights,searchHotels} from "../../../lib/travel-provider.js";
+import {travelportConfigured,travelportStaysConfigured,searchFlights,searchHotels} from "../../../lib/travel-provider.js";
 
 export async function GET(){
   return NextResponse.json({
@@ -58,8 +58,45 @@ export async function POST(req){
     }
 
     if(p.mode==="hotel"){
+      if(!travelportStaysConfigured()){
+        return NextResponse.json({
+          status:"not_configured",
+          message:"Travelport Stays access is not provisioned/configured yet."
+        },{status:503});
+      }
+
       const result=await searchHotels(p);
-      return NextResponse.json(result.data,{status:result.status});
+
+      if(result.status>=200&&result.status<300){
+        return NextResponse.json({
+          status:"live",
+          provider:"Travelport Stays",
+          trackingId:result.trackingId||"",
+          data:result.data
+        });
+      }
+
+      const providerMessage=
+        result.data?.error_description||
+        result.data?.error||
+        result.data?.errors?.[0]?.message||
+        result.data?.errors?.[0]?.detail||
+        result.data?.Error?.[0]?.Message||
+        result.data?.Error?.[0]?.message||
+        result.data?.detail||
+        result.data?.faultstring||
+        result.data?.message||
+        (result.data ? JSON.stringify(result.data).slice(0,900) : "")||
+        "Travelport Stays returned an error.";
+
+      return NextResponse.json({
+        status:"provider_error",
+        provider:"Travelport Stays",
+        code:result.status,
+        trackingId:result.trackingId||"",
+        message:String(providerMessage),
+        data:result.data
+      },{status:502});
     }
 
     return NextResponse.json({status:"error",message:"Unknown search mode."},{status:400});
