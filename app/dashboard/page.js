@@ -206,16 +206,41 @@ function CardDetails({wallet}){
  return <section className="cardDetails"><div className="sectionHead"><div><h2>Your cards, fully mapped</h2><p>Benefits, earning, travel perks, fees and redemption rules • issuer-verified metadata</p></div></div><div className="cardDetailGrid">{enriched.map(({wallet:w,card:c})=><article className="cardDetail" key={w.id}><div className="cardTop"><div><small>{c?.issuer||"Card"}</small><h3>{w.card_name}</h3></div><span>{Number(w.points||0).toLocaleString("en-IN")} pts</span></div>{c?<><div className="detailChips"><b>{c.network||"—"}</b><b>{c.annual_fee==null?"Fee n/a":c.annual_fee===0?"Lifetime free":"₹"+Number(c.annual_fee).toLocaleString("en-IN")+" + GST"}</b><b>{c.forex_markup==null?"Forex n/a":c.forex_markup===0?"0% forex":c.forex_markup+"% forex"}</b></div><dl><div><dt>Base rewards</dt><dd>{c.base_reward}</dd></div><div><dt>Accelerated rewards</dt><dd>{c.accelerated_reward}</dd></div><div><dt>Lounge</dt><dd>{c.lounge_benefit}</dd></div><div><dt>Travel</dt><dd>{c.travel_benefit}</dd></div><div><dt>Milestones</dt><dd>{c.milestone_benefit}</dd></div><div><dt>Redemption</dt><dd>{c.redemption_summary}</dd></div></dl><details><summary>All key benefits</summary><ul>{(c.key_benefits||[]).map((b,i)=><li key={i}>{b}</li>)}</ul></details><a className="sourceLink" href={c.source_url} target="_blank" rel="noreferrer">View issuer source ↗</a><small className="verifiedLine">Verified {String(c.verified_at||"").slice(0,10)||"—"}</small></>:<div className="notice">Detailed catalogue data is being added for this card.</div>}</article>)}</div></section>
 }
 
-function CommandDeck({wallet,onPlanTrip,onValue}){
+function CommandDeck({wallet,onPlanTrip,onValue,onWallet,onRoutes}){
  const total=wallet.reduce((sum,card)=>sum+Number(card.points||0),0);
  const hdfc=wallet.find(card=>String(card.card_name||"").toLowerCase().includes("diners black"));
  const icici=wallet.find(card=>String(card.card_name||"").toLowerCase().includes("times black"));
  const leaders=[...wallet].sort((a,b)=>Number(b.points||0)-Number(a.points||0)).slice(0,3);
- return <section className="commandDeck" aria-label="Your next reward decisions">
-   <article className="decisionCard"><div className="decisionTop"><span className="pill cyan">START HERE</span><span className="liveDot">Wallet mapped</span></div><h2>Choose the trip first.<br/><em>Then choose the points.</em></h2><p>PointPilot compares a live cash fare against the verified routes already in your wallet. It never labels an award seat as available until a live award source confirms it.</p><div className="decisionActions"><button className="btn decisionPrimary" onClick={onPlanTrip}>Plan a flight <span>→</span></button><button className="decisionText" onClick={onValue}>Calculate value</button></div></article>
-   <article className="routeBrief"><span className="briefEyebrow">BEST-USE BRIEF</span><h3>{hdfc?"HDFC Diners Black Metal is ready for SmartBuy.":"Your verified redemption routes are ready."}</h3><p>{hdfc?<>Up to <b>75,000 points</b> can be redeemed each calendar month. SmartBuy bookings can use points for up to <b>70%</b> of the booking value.</>:"Add a card balance to unlock its verified redemption routes and transfer options."}</p><div className="briefDivider"/><div className="briefStats"><span><b>{wallet.length}</b> cards mapped</span><span><b>{total.toLocaleString("en-IN")}</b> points tracked</span></div></article>
-   <article className="signalCard"><span className="briefEyebrow">TRANSFER SIGNALS</span>{icici?<div className="signalItem"><b>Times Black → Air India</b><span>1:1 Maharaja Points • no minimum</span></div>:null}<div className="signalItem"><b>Transfer only when you see award space</b><span>Transfers can be irreversible; cash fare search does not prove award availability.</span></div></article>
-   <article className="balanceStrip"><div><span className="briefEyebrow">LARGEST BALANCES</span><h3>Where your flexibility sits</h3></div><div className="balanceList">{leaders.map(card=><div key={card.id||card.card_name}><span>{card.card_name}</span><b>{Number(card.points||0).toLocaleString("en-IN")} pts</b></div>)}</div></article>
+ const smartBuy=Math.min(Number(hdfc?.points||0),75000);
+ return <section className="atlas" aria-label="PointPilot reward atlas">
+   <article className="atlasHero">
+     <div className="atlasEyebrow"><span className="atlasMark">✦</span> POINTPILOT ATLAS <span className="atlasLive">LIVE WALLET</span></div>
+     <h2>Your next best trip<br/><em>starts with what you own.</em></h2>
+     <p>Make one clear decision at a time: choose a trip, check a verified route, then use points with confidence.</p>
+     <div className="atlasActions"><button className="atlasPrimary" onClick={onPlanTrip}>Find a flight <span>↗</span></button><button className="atlasGhost" onClick={onValue}>Calculate a redemption</button></div>
+     <div className="atlasFootnote"><span>●</span> Cash fares are live. Award seats are only shown when a live award source confirms them.</div>
+   </article>
+   <article className="atlasRoute">
+     <div className="atlasSectionTop"><span>YOUR BEST START</span><b>01 / 03</b></div>
+     <h3>{hdfc?"Unlock SmartBuy value":"Map your strongest route"}</h3>
+     <p>{hdfc?<>You have <b>{smartBuy.toLocaleString("en-IN")} HDFC points</b> ready for SmartBuy this month—up to ₹{smartBuy.toLocaleString("en-IN")} in direct travel value, subject to the 70% booking limit.</>:<>Your wallet has <b>{wallet.length} cards</b>. Start by mapping a real trip against the routes you already hold.</>}</p>
+     <div className="routePath"><div><i>01</i><span>Wallet</span><b>{total.toLocaleString("en-IN")} pts</b></div><strong>→</strong><div><i>02</i><span>Cash fare</span><b>Live check</b></div><strong>→</strong><div><i>03</i><span>Best route</span><b>Verified</b></div></div>
+   </article>
+   <article className="atlasSignals">
+     <div className="atlasSectionTop"><span>TRANSFER SIGNALS</span><b>WATCHLIST</b></div>
+     {icici&&<div className="signalLine"><div className="signalIcon">AI</div><div><b>Times Black → Air India</b><span>1:1 Maharaja Points · transfer only after confirming award space</span></div></div>}
+     <div className="signalLine"><div className="signalIcon">₹</div><div><b>Every value is explainable</b><span>Caps, taxes, points consumed and source dates stay visible.</span></div></div>
+   </article>
+   <article className="atlasBalances">
+     <div><span>FLEXIBILITY LEDGER</span><h3>Where your options live</h3></div>
+     <div className="ledgerList">{leaders.map((card,index)=><div key={card.id||card.card_name}><i>0{index+1}</i><span>{card.card_name}</span><b>{Number(card.points||0).toLocaleString("en-IN")} <small>pts</small></b></div>)}</div>
+   </article>
+   <nav className="atlasNav" aria-label="Reward tools">
+     <button onClick={onPlanTrip}><i>01</i><span>Trip intelligence</span><small>Compare a live fare</small></button>
+     <button onClick={onRoutes}><i>02</i><span>Route intelligence</span><small>See verified value</small></button>
+     <button onClick={onWallet}><i>03</i><span>Wallet ledger</span><small>Track every balance</small></button>
+     <button onClick={onValue}><i>04</i><span>Value lab</span><small>Calculate ₹ / point</small></button>
+   </nav>
  </section>}
 
 export default function Dashboard(){
@@ -244,8 +269,8 @@ export default function Dashboard(){
  if(status==="loading")return <main className="page"><div className="loader">Loading your wallet…</div></main>;
  if(status==="error")return <main className="page"><div className="loadFailure"><div className="eyebrow">WALLET CONNECTION</div><h1>Your sign-in worked.</h1><p>We couldn’t retrieve the wallet just yet. Your cards have not been changed.</p><div className="errorBox">{loadError}</div><button className="btn primary" onClick={loadWallet}>Try loading wallet again</button><button className="linkBtn" onClick={()=>getSupabase().auth.signOut().finally(()=>location.replace("/login"))}>Sign in again</button></div></main>;
  return <main className="page"><nav className="nav"><b>Point<span>Pilot</span></b><div className="navAccount"><div><strong>{holderName}</strong><small>{holderEmail}</small></div><button className="linkBtn" onClick={()=>getSupabase().auth.signOut().then(()=>location.href="/")}>Sign out</button></div></nav>
- <section className="dashHero"><div><div className="eyebrow">YOUR REWARDS COMMAND CENTRE</div><h1>Make every point work harder.</h1><p>Start with what you hold. Then compare the trip you want.</p></div><div className="total"><small>TOTAL POINTS</small><strong>{total.toLocaleString("en-IN")}</strong><span>across {wallet.length} cards</span></div></section>
- <CommandDeck wallet={wallet} onPlanTrip={()=>{setTab("flights");setTimeout(()=>document.querySelector(".toolArea")?.scrollIntoView({behavior:"smooth",block:"start"}),0)}} onValue={()=>{setTab("value");setTimeout(()=>document.querySelector(".toolArea")?.scrollIntoView({behavior:"smooth",block:"start"}),0)}}/><div className="workflowRail"><span>01 <b>Map your balances</b></span><i>→</i><span>02 <b>Compare a real trip</b></span><i>→</i><span>03 <b>Redeem with confidence</b></span></div>
+ <section className="dashHero atlasHeader"><div><div className="eyebrow">REWARDS INTELLIGENCE / INDIA</div><h1>Good evening, {holderName.split(" ")[0]||"there"}.</h1><p>Your rewards are ready to become something more useful than a number on a statement.</p></div><div className="total"><small>POINTS UNDER MANAGEMENT</small><strong>{total.toLocaleString("en-IN")}</strong><span>{wallet.length} cards · verified routes first</span></div></section>
+ <CommandDeck wallet={wallet} onPlanTrip={()=>{setTab("flights");setTimeout(()=>document.querySelector(".toolArea")?.scrollIntoView({behavior:"smooth",block:"start"}),0)}} onValue={()=>{setTab("value");setTimeout(()=>document.querySelector(".toolArea")?.scrollIntoView({behavior:"smooth",block:"start"}),0)}} onWallet={()=>document.querySelector(".wallet")?.scrollIntoView({behavior:"smooth",block:"start"})} onRoutes={()=>document.querySelector(".bestUse")?.scrollIntoView({behavior:"smooth",block:"start"})}/>
  <WalletSection wallet={wallet} setWallet={setWallet}/>
  <BestUseSection wallet={wallet}/>
  <CardDetails wallet={wallet}/>
