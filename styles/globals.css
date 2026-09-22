@@ -45,3 +45,23 @@
 .pointDecision span{display:block;color:#667085;font-size:10px;margin-top:3px}
 @media(max-width:850px){.hotelCard{grid-template-columns:130px minmax(0,1fr)}.hotelPrice{grid-column:2;border-left:0;padding-left:0;border-top:1px solid var(--line);padding-top:12px}.hotelPointWrap{grid-column:1/-1}}
 @media(max-width:560px){.navAccount>div{display:none}.navAccount{gap:6px}.hotelCard{grid-template-columns:1fr}.hotelPhoto{height:190px}.hotelPrice{grid-column:auto}.hotelPointWrap{grid-column:auto}.hotelPointPanel{display:block}.pointDecision{text-align:left;margin-top:10px}.hotelTerms{display:block}.hotelTerms span{display:inline-block;margin:0 5px 5px 0}}
+
+.bestUse{margin-top:20px}
+.engineBadge{font-size:9px;font-weight:950;letter-spacing:.1em;color:#5b45d6;background:#eeeaff;border-radius:999px;padding:7px 10px}
+.bestUseGrid{display:grid;grid-template-columns:1.05fr 1fr 1fr;gap:12px}
+.optimizerHero{border-radius:22px;padding:22px;color:#fff;background:linear-gradient(135deg,#0d1025,#5239bb);box-shadow:0 16px 38px #4734a526}
+.optimizerHero small{display:block;color:#c9c3ff;font-size:9px;font-weight:950;letter-spacing:.12em}
+.optimizerHero strong{display:block;font-size:38px;letter-spacing:-1.8px;margin:7px 0}
+.optimizerHero span{font-size:11px;color:#d9dcef}
+.optimizerRule{margin-top:25px;padding-top:14px;border-top:1px solid #ffffff26;color:#d9dcef;font-size:11px;line-height:1.5}
+.useList{background:#fff;border:1px solid var(--line);border-radius:22px;padding:18px}
+.useList h3{margin:0 0 10px;font-size:15px;letter-spacing:-.3px}
+.useRow{display:flex;justify-content:space-between;gap:12px;padding:13px 0;border-top:1px solid #f0f1f5}
+.useRow b,.useRow span{display:block}
+.useRow b{font-size:11px}
+.useRow span{font-size:10px;color:var(--muted);margin-top:4px;line-height:1.35}
+.useValue{text-align:right;min-width:120px}
+.useValue strong{display:block;color:#503ac0;font-size:13px}
+.emptyMini{font-size:11px;color:var(--muted);padding:15px 0}
+@media(max-width:850px){.bestUseGrid{grid-template-columns:1fr 1fr}.optimizerHero{grid-column:1/-1}}
+@media(max-width:560px){.bestUseGrid{grid-template-columns:1fr}.optimizerHero{grid-column:auto}.engineBadge{display:none}.useRow{display:block}.useValue{text-align:left;margin-top:7px}}
