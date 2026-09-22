@@ -2,6 +2,7 @@
 
 import {useEffect,useMemo,useState} from "react";
 import {createClient} from "@supabase/supabase-js";
+import BestUseSection from "./BestUseSection.js";
 
 const getSupabase=()=>createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
 
@@ -202,6 +203,7 @@ export default function Dashboard(){
  <section className="dashHero"><div><div className="eyebrow">YOUR REWARDS COMMAND CENTRE</div><h1>Make every point work harder.</h1><p>Start with what you hold. Then compare the trip you want.</p></div><div className="total"><small>TOTAL POINTS</small><strong>{total.toLocaleString("en-IN")}</strong><span>across {wallet.length} cards</span></div></section>
  <div className="quick"><button onClick={()=>setTab("flights")}>✈️ Flights<span>Live fare search →</span></button><button onClick={()=>setTab("hotels")}>🏨 Hotels<span>Hotel search →</span></button><button onClick={()=>setTab("value")}>₹ Value Engine<span>Calculate ₹/point →</span></button></div>
  <WalletSection wallet={wallet} setWallet={setWallet}/>
+ <BestUseSection wallet={wallet}/>
  <CardDetails wallet={wallet}/>
  <section className="toolArea"><div className="toolTabs"><button className={tab==="flights"?"active":""} onClick={()=>setTab("flights")}>✈️ Flights</button><button className={tab==="hotels"?"active":""} onClick={()=>setTab("hotels")}>🏨 Hotels</button><button className={tab==="value"?"active":""} onClick={()=>setTab("value")}>₹ Value Engine</button></div>{tab==="flights"?<FlightSearch/>:tab==="hotels"?<HotelSearch/>:<ValueEngine/>}</section>
  <section className="featureGrid"><article className="feature"><div className="icon">🔄</div><h3>Reward routes next</h3><p>Verified transfer ratios, caps, timing, expiry and source dates will be layered onto live travel results.</p></article><article className="feature"><div className="icon">🧮</div><h3>Transparent value</h3><p>Every redemption will show net value, points consumed, taxes and effective ₹/point.</p></article><article className="feature"><div className="icon">🛡️</div><h3>No fake award availability</h3><p>Cash inventory is labelled live. Award availability will only be labelled confirmed when a live award source supports it.</p></article></section><footer>PointPilot production • Travel-provider credentials stay server-side. Flight search: Travelport. Hotel search: dedicated stays provider.</footer></main>
