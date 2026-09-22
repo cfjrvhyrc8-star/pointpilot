@@ -1,10 +1,11 @@
 "use client";
 
-import {useEffect,useMemo,useState} from "react";
+import {useCallback,useEffect,useMemo,useState} from "react";
 import {createClient} from "@supabase/supabase-js";
 import BestUseSection from "./BestUseSection.js";
 
 const getSupabase=()=>createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
+const within=(promise,ms,label)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label)),ms))]);
 
 function money(n,currency="INR"){return Number(n||0).toLocaleString("en-IN",{style:"currency",currency,maximumFractionDigits:0})}
 
@@ -195,16 +196,36 @@ function CardDetails({wallet}){
 }
 
 export default function Dashboard(){
- const[wallet,setWallet]=useState([]),[user,setUser]=useState(null),[ready,setReady]=useState(false),[tab,setTab]=useState("flights");
- useEffect(()=>{const supabase=getSupabase();supabase.auth.getUser().then(async({data})=>{if(!data.user){location.href="/login";return}setUser(data.user);const{data:w,error}=await supabase.from("wallet_cards").select("*").eq("user_id",data.user.id).order("created_at");if(error){console.error(error);setWallet([])}else{setWallet(w||[])}setReady(true)})},[]);
+ const[wallet,setWallet]=useState([]),[user,setUser]=useState(null),[status,setStatus]=useState("loading"),[loadError,setLoadError]=useState(""),[tab,setTab]=useState("flights");
+ const loadWallet=useCallback(async()=>{
+   setStatus("loading"); setLoadError("");
+   try{
+     const supabase=getSupabase();
+     // Read the magic-link session from local storage before asking Auth over the network.
+     // The following wallet request still carries the JWT, so owner-only RLS remains enforced.
+     const {data:{session},error:sessionError}=await within(supabase.auth.getSession(),12000,"The saved sign-in session took too long to respond.");
+     if(sessionError) throw sessionError;
+     if(!session?.user){location.replace("/login");return}
+     setUser(session.user);
+     const {data:w,error:walletError}=await within(supabase.from("wallet_cards").select("*").eq("user_id",session.user.id).order("created_at"),12000,"The wallet request timed out. Please try again.");
+     if(walletError) throw walletError;
+     setWallet(w||[]); setStatus("ready");
+   }catch(error){
+     console.error("Unable to load PointPilot wallet",error);
+     setLoadError(error?.message||"PointPilot could not load your wallet.");
+     setStatus("error");
+   }
+ },[]);
+ useEffect(()=>{loadWallet()},[loadWallet]);
  const total=useMemo(()=>wallet.reduce((a,x)=>a+Number(x.points||0),0),[wallet]); const holderName=String(user?.user_metadata?.full_name||user?.user_metadata?.name||"").trim()||"Wallet holder"; const holderEmail=user?.email||"";
- if(!ready)return <main className="page"><div className="loader">Loading your wallet…</div></main>;
+ if(status==="loading")return <main className="page"><div className="loader">Loading your wallet…</div></main>;
+ if(status==="error")return <main className="page"><div className="loadFailure"><div className="eyebrow">WALLET CONNECTION</div><h1>Your sign-in worked.</h1><p>We couldn’t retrieve the wallet just yet. Your cards have not been changed.</p><div className="errorBox">{loadError}</div><button className="btn primary" onClick={loadWallet}>Try loading wallet again</button><button className="linkBtn" onClick={()=>getSupabase().auth.signOut().finally(()=>location.replace("/login"))}>Sign in again</button></div></main>;
  return <main className="page"><nav className="nav"><b>Point<span>Pilot</span></b><div className="navAccount"><div><strong>{holderName}</strong><small>{holderEmail}</small></div><button className="linkBtn" onClick={()=>getSupabase().auth.signOut().then(()=>location.href="/")}>Sign out</button></div></nav>
  <section className="dashHero"><div><div className="eyebrow">YOUR REWARDS COMMAND CENTRE</div><h1>Make every point work harder.</h1><p>Start with what you hold. Then compare the trip you want.</p></div><div className="total"><small>TOTAL POINTS</small><strong>{total.toLocaleString("en-IN")}</strong><span>across {wallet.length} cards</span></div></section>
- <div className="quick"><button onClick={()=>setTab("flights")}>✈️ Flights<span>Live fare search →</span></button><button onClick={()=>setTab("hotels")}>🏨 Hotels<span>Hotel search →</span></button><button onClick={()=>setTab("value")}>₹ Value Engine<span>Calculate ₹/point →</span></button></div>
+ <div className="quick"><button onClick={()=>setTab("flights")}>✈️ Flights<span>Compare a live fare →</span></button><button onClick={()=>setTab("value")}>₹ Value Engine<span>Calculate ₹/point →</span></button><div className="deferredQuick">🏨 Hotels<span>Integration deferred</span></div></div>
  <WalletSection wallet={wallet} setWallet={setWallet}/>
  <BestUseSection wallet={wallet}/>
  <CardDetails wallet={wallet}/>
- <section className="toolArea"><div className="toolTabs"><button className={tab==="flights"?"active":""} onClick={()=>setTab("flights")}>✈️ Flights</button><button className={tab==="hotels"?"active":""} onClick={()=>setTab("hotels")}>🏨 Hotels</button><button className={tab==="value"?"active":""} onClick={()=>setTab("value")}>₹ Value Engine</button></div>{tab==="flights"?<FlightSearch/>:tab==="hotels"?<HotelSearch/>:<ValueEngine/>}</section>
+ <section className="toolArea"><div className="toolTabs"><button className={tab==="flights"?"active":""} onClick={()=>setTab("flights")}>✈️ Flights</button><button className={tab==="value"?"active":""} onClick={()=>setTab("value")}>₹ Value Engine</button></div>{tab==="flights"?<FlightSearch/>:<ValueEngine/>}</section>
  <section className="featureGrid"><article className="feature"><div className="icon">🔄</div><h3>Reward routes next</h3><p>Verified transfer ratios, caps, timing, expiry and source dates will be layered onto live travel results.</p></article><article className="feature"><div className="icon">🧮</div><h3>Transparent value</h3><p>Every redemption will show net value, points consumed, taxes and effective ₹/point.</p></article><article className="feature"><div className="icon">🛡️</div><h3>No fake award availability</h3><p>Cash inventory is labelled live. Award availability will only be labelled confirmed when a live award source supports it.</p></article></section><footer>PointPilot production • Travel-provider credentials stay server-side. Flight search: Travelport. Hotel search: dedicated stays provider.</footer></main>
 }
