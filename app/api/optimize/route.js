@@ -103,7 +103,7 @@ export async function POST(req){
   }catch(e){
     return NextResponse.json({
       status:"error",
-      message:e?.message||"Unexpected server error"
+      message:e?.name==="AbortError"?"Travelport did not respond in time. Please try again shortly.":(e?.message||"Unexpected server error")
     },{status:500});
   }
 }
