@@ -1,1 +1,2 @@
-import "../styles/globals.css"; export const metadata={title:"PointPilot — Rewards Intelligence",description:"Optimise credit-card points for flights and hotels."}; export default function RootLayout({children}){return <html lang="en"><body>{children}</body></html>}
+import "../styles/globals.css";
+import ChunkRecovery from "./ChunkRecovery"; export const metadata={title:"PointPilot — Rewards Intelligence",description:"Optimise credit-card points for flights and hotels."}; export default function RootLayout({children}){return <html lang="en"><body><ChunkRecovery/>{children}</body></html>}
