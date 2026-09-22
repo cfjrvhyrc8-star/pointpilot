@@ -21,6 +21,17 @@ function cardMatchesRule(cardName,rule){
  const n=clean(cardName),target=clean(rule?.card_name);
  return Boolean(target&&(n.includes(target)||target.includes(n)));
 }
+function cardMatchesCatalog(cardName,catalogCard){
+ const aliases={
+   "scapia":["scapia","scapia federal credit card"],
+   "onecard":["onecard","one credit card"],
+   "dinersblackmetal":["diners black metal","diners club black metal"]
+ };
+ const clean=v=>String(v||"").toLowerCase().replace(/american express india|federal|credit|metal|club|card|first|hdfc|icici|idfc|bank/g,"").replace(/[^a-z0-9]/g,"");
+ const wallet=clean(cardName),catalog=clean(catalogCard?.card_name);
+ if(wallet&&catalog&&(wallet===catalog||wallet.includes(catalog)||catalog.includes(wallet)))return true;
+ return Object.entries(aliases).some(([key,names])=>wallet===key&&names.some(name=>clean(name)===catalog));
+}
 function rulesForCard(cardName,rules){
  return (rules||[]).filter(r=>cardMatchesRule(cardName,r));
 }
@@ -191,7 +202,7 @@ function WalletSection({wallet,setWallet}){
 function CardDetails({wallet}){
  const [cards,setCards]=useState([]);
  useEffect(()=>{getSupabase().from("card_catalog").select("*").eq("active",true).order("issuer").order("card_name").then(({data})=>setCards(data||[]))},[]);
- const enriched=wallet.map(w=>{const c=cards.find(x=>cardMatchesRule(w.card_name,x));return{wallet:w,card:c}});
+ const enriched=wallet.map(w=>{const c=cards.find(x=>cardMatchesCatalog(w.card_name,x));return{wallet:w,card:c}});
  return <section className="cardDetails"><div className="sectionHead"><div><h2>Your cards, fully mapped</h2><p>Benefits, earning, travel perks, fees and redemption rules • issuer-verified metadata</p></div></div><div className="cardDetailGrid">{enriched.map(({wallet:w,card:c})=><article className="cardDetail" key={w.id}><div className="cardTop"><div><small>{c?.issuer||"Card"}</small><h3>{w.card_name}</h3></div><span>{Number(w.points||0).toLocaleString("en-IN")} pts</span></div>{c?<><div className="detailChips"><b>{c.network||"—"}</b><b>{c.annual_fee==null?"Fee n/a":c.annual_fee===0?"Lifetime free":"₹"+Number(c.annual_fee).toLocaleString("en-IN")+" + GST"}</b><b>{c.forex_markup==null?"Forex n/a":c.forex_markup===0?"0% forex":c.forex_markup+"% forex"}</b></div><dl><div><dt>Base rewards</dt><dd>{c.base_reward}</dd></div><div><dt>Accelerated rewards</dt><dd>{c.accelerated_reward}</dd></div><div><dt>Lounge</dt><dd>{c.lounge_benefit}</dd></div><div><dt>Travel</dt><dd>{c.travel_benefit}</dd></div><div><dt>Milestones</dt><dd>{c.milestone_benefit}</dd></div><div><dt>Redemption</dt><dd>{c.redemption_summary}</dd></div></dl><details><summary>All key benefits</summary><ul>{(c.key_benefits||[]).map((b,i)=><li key={i}>{b}</li>)}</ul></details><a className="sourceLink" href={c.source_url} target="_blank" rel="noreferrer">View issuer source ↗</a><small className="verifiedLine">Verified {String(c.verified_at||"").slice(0,10)||"—"}</small></>:<div className="notice">Detailed catalogue data is being added for this card.</div>}</article>)}</div></section>
 }
 
@@ -234,10 +245,10 @@ export default function Dashboard(){
  if(status==="error")return <main className="page"><div className="loadFailure"><div className="eyebrow">WALLET CONNECTION</div><h1>Your sign-in worked.</h1><p>We couldn’t retrieve the wallet just yet. Your cards have not been changed.</p><div className="errorBox">{loadError}</div><button className="btn primary" onClick={loadWallet}>Try loading wallet again</button><button className="linkBtn" onClick={()=>getSupabase().auth.signOut().finally(()=>location.replace("/login"))}>Sign in again</button></div></main>;
  return <main className="page"><nav className="nav"><b>Point<span>Pilot</span></b><div className="navAccount"><div><strong>{holderName}</strong><small>{holderEmail}</small></div><button className="linkBtn" onClick={()=>getSupabase().auth.signOut().then(()=>location.href="/")}>Sign out</button></div></nav>
  <section className="dashHero"><div><div className="eyebrow">YOUR REWARDS COMMAND CENTRE</div><h1>Make every point work harder.</h1><p>Start with what you hold. Then compare the trip you want.</p></div><div className="total"><small>TOTAL POINTS</small><strong>{total.toLocaleString("en-IN")}</strong><span>across {wallet.length} cards</span></div></section>
- <CommandDeck wallet={wallet} onPlanTrip={()=>setTab("flights")} onValue={()=>setTab("value")}/><div className="workflowRail"><span>01 <b>Map your balances</b></span><i>→</i><span>02 <b>Compare a real trip</b></span><i>→</i><span>03 <b>Redeem with confidence</b></span></div>
+ <CommandDeck wallet={wallet} onPlanTrip={()=>{setTab("flights");setTimeout(()=>document.querySelector(".toolArea")?.scrollIntoView({behavior:"smooth",block:"start"}),0)}} onValue={()=>{setTab("value");setTimeout(()=>document.querySelector(".toolArea")?.scrollIntoView({behavior:"smooth",block:"start"}),0)}}/><div className="workflowRail"><span>01 <b>Map your balances</b></span><i>→</i><span>02 <b>Compare a real trip</b></span><i>→</i><span>03 <b>Redeem with confidence</b></span></div>
  <WalletSection wallet={wallet} setWallet={setWallet}/>
  <BestUseSection wallet={wallet}/>
  <CardDetails wallet={wallet}/>
  <section className="toolArea"><div className="toolTabs"><button className={tab==="flights"?"active":""} onClick={()=>setTab("flights")}>✈️ Flights</button><button className={tab==="value"?"active":""} onClick={()=>setTab("value")}>₹ Value Engine</button></div>{tab==="flights"?<FlightSearch/>:<ValueEngine/>}</section>
- <section className="featureGrid"><article className="feature"><div className="icon">🔄</div><h3>Reward routes next</h3><p>Verified transfer ratios, caps, timing, expiry and source dates will be layered onto live travel results.</p></article><article className="feature"><div className="icon">🧮</div><h3>Transparent value</h3><p>Every redemption will show net value, points consumed, taxes and effective ₹/point.</p></article><article className="feature"><div className="icon">🛡️</div><h3>No fake award availability</h3><p>Cash inventory is labelled live. Award availability will only be labelled confirmed when a live award source supports it.</p></article></section><footer>PointPilot production • Travel-provider credentials stay server-side. Flight search: Travelport. Hotel search: dedicated stays provider.</footer></main>
+ <section className="featureGrid"><article className="feature"><div className="icon">🔄</div><h3>Reward routes next</h3><p>Verified transfer ratios, caps, timing, expiry and source dates will be layered onto live travel results.</p></article><article className="feature"><div className="icon">🧮</div><h3>Transparent value</h3><p>Every redemption will show net value, points consumed, taxes and effective ₹/point.</p></article><article className="feature"><div className="icon">🛡️</div><h3>No fake award availability</h3><p>Cash inventory is labelled live. Award availability will only be labelled confirmed when a live award source supports it.</p></article></section><footer>PointPilot production • Travel-provider credentials stay server-side. Flight search: Travelport. Hotels: intentionally deferred.</footer></main>
 }
