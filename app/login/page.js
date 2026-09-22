@@ -23,6 +23,19 @@ export default function Login(){
   const[msg,setMsg]=useState("");
   const[loading,setLoading]=useState(false);
 
+  async function socialLogin(provider){
+    setMsg("");
+    setLoading(true);
+    const {error}=await getSupabase().auth.signInWithOAuth({
+      provider,
+      options:{redirectTo:window.location.origin+"/dashboard"}
+    });
+    if(error){
+      setLoading(false);
+      setMsg(`${provider==="apple"?"Apple":"Facebook"} sign-in is not available yet. Please use email, or finish enabling this provider in Supabase.`);
+    }
+  }
+
   async function submit(e){
     e.preventDefault();
     setMsg("");
@@ -68,6 +81,11 @@ export default function Login(){
           {loading?"Sending…":"Email me a sign-in link"}
         </button>
       </form>
+      <div className="authDivider"><span>or continue with</span></div>
+      <div className="socialAuth">
+        <button className="socialBtn" type="button" disabled={loading} onClick={()=>socialLogin("apple")}><span aria-hidden="true">●</span> Continue with Apple</button>
+        <button className="socialBtn" type="button" disabled={loading} onClick={()=>socialLogin("facebook")}><span aria-hidden="true">f</span> Continue with Facebook</button>
+      </div>
       {msg&&<div className={msg.startsWith("Secure")?"notice":"errorBox"}>{msg}</div>}
       <small className="authHint">The sign-in link is one-time use. For production delivery, PointPilot uses Supabase Auth with a configured SMTP provider.</small>
     </div>
