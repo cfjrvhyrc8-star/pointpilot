@@ -3,6 +3,7 @@
 import {useCallback,useEffect,useMemo,useState} from "react";
 import {createClient} from "@supabase/supabase-js";
 import BestUseSection from "./BestUseSection.js";
+import SpendSmart from "./SpendSmart.js";
 
 const getSupabase=()=>createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
 const within=(promise,ms,label)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label)),ms))]);
@@ -271,6 +272,7 @@ export default function Dashboard(){
  return <main className="page"><nav className="nav"><b>Point<span>Pilot</span></b><div className="navAccount"><div><strong>{holderName}</strong><small>{holderEmail}</small></div><button className="linkBtn" onClick={()=>getSupabase().auth.signOut().then(()=>location.href="/")}>Sign out</button></div></nav>
  <section className="dashHero atlasHeader"><div><div className="eyebrow">REWARDS INTELLIGENCE / INDIA</div><h1>Good evening, {holderName.split(" ")[0]||"there"}.</h1><p>Your rewards are ready to become something more useful than a number on a statement.</p></div><div className="total"><small>POINTS UNDER MANAGEMENT</small><strong>{total.toLocaleString("en-IN")}</strong><span>{wallet.length} cards · verified routes first</span></div></section>
  <CommandDeck wallet={wallet} onPlanTrip={()=>{setTab("flights");setTimeout(()=>document.querySelector(".toolArea")?.scrollIntoView({behavior:"smooth",block:"start"}),0)}} onValue={()=>{setTab("value");setTimeout(()=>document.querySelector(".toolArea")?.scrollIntoView({behavior:"smooth",block:"start"}),0)}} onWallet={()=>document.querySelector(".wallet")?.scrollIntoView({behavior:"smooth",block:"start"})} onRoutes={()=>document.querySelector(".bestUse")?.scrollIntoView({behavior:"smooth",block:"start"})}/>
+ <SpendSmart wallet={wallet}/>
  <WalletSection wallet={wallet} setWallet={setWallet}/>
  <BestUseSection wallet={wallet}/>
  <CardDetails wallet={wallet}/>
