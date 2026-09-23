@@ -87,3 +87,40 @@ on conflict (issuer,card_name) do update set
  travel_benefit=excluded.travel_benefit,milestone_benefit=excluded.milestone_benefit,key_benefits=excluded.key_benefits,
  reward_currency=excluded.reward_currency,redemption_summary=excluded.redemption_summary,source_url=excluded.source_url,
  verified_at=excluded.verified_at,active=true;
+
+
+-- Spend intelligence: normalized, source-verified rules used by the wallet ranking engine.
+create table if not exists public.spend_rules (
+ id uuid primary key default gen_random_uuid(), issuer text not null, card_name text not null,
+ category text not null, channel text not null default 'any', value_rate_percent numeric(8,4),
+ reward_label text not null, cap_amount numeric, condition_text text, exclusions_text text,
+ source_url text not null, verified_at timestamptz not null default now(),
+ active boolean not null default true, created_at timestamptz not null default now(),
+ unique(issuer,card_name,category,channel)
+);
+alter table public.spend_rules enable row level security;
+revoke all privileges on table public.spend_rules from anon, authenticated;
+grant select on table public.spend_rules to authenticated;
+drop policy if exists "Authenticated users can read active spend rules" on public.spend_rules;
+create policy "Authenticated users can read active spend rules" on public.spend_rules
+ for select to authenticated using(active=true);
+create index if not exists spend_rules_card_category_idx on public.spend_rules(card_name,category) where active;
+
+insert into public.spend_rules
+(issuer,card_name,category,channel,value_rate_percent,reward_label,condition_text,exclusions_text,source_url,verified_at)
+values
+('HDFC Bank','Diners Club Black Metal','general','any',0.6667,'1 Reward Point per ₹150; modeled at ₹1/point for eligible SmartBuy travel','Eligible retail spend','Issuer exclusions and redemption limits apply','https://www.hdfc.bank.in/credit-cards/diners-club-black-metal-edition-credit-card','2026-09-20'),
+('HDFC Bank','Diners Club Black Metal','dining','weekend',1.3333,'2X Reward Points on eligible weekend dining','Weekend dining only','Issuer exclusions and monthly caps may apply','https://www.hdfc.bank.in/credit-cards/diners-club-black-metal-edition-credit-card','2026-09-20'),
+('HDFC Bank','Diners Club Black Metal','flights','smartbuy',3.3333,'5X Reward Points on eligible SmartBuy flights','Book through eligible SmartBuy route','Portal caps and 70% points-payment rule apply','https://www.hdfc.bank.in/credit-cards/diners-club-black-metal-edition-credit-card','2026-09-20'),
+('HDFC Bank','Diners Club Black Metal','hotels','smartbuy',6.6667,'10X Reward Points on eligible SmartBuy hotels','Book through eligible SmartBuy route','Portal caps and 70% points-payment rule apply','https://www.hdfc.bank.in/credit-cards/diners-club-black-metal-edition-credit-card','2026-09-20'),
+('ICICI Bank','Times Black','general','domestic',2.0000,'2% domestic rewards','Eligible domestic spend','Reward catalogue and issuer exclusions apply','https://www.icici.bank.in/personal-banking/cards/credit-card/times-black-icici-credit-card','2026-09-20'),
+('ICICI Bank','Times Black','international','any',2.5000,'2.5% international rewards','Eligible international spend','1.49% forex markup and issuer exclusions apply','https://www.icici.bank.in/personal-banking/cards/credit-card/times-black-icici-credit-card','2026-09-20'),
+('American Express India','Platinum Travel','general','any',0.6000,'1 MR per ₹50, valued conservatively through the verified Air India voucher route','Eligible spend','Fuel, utilities, insurance, cash and issuer exclusions apply','https://www.americanexpress.com/in/benefits/platinum-travel-credit-card/','2026-09-20'),
+('IDFC FIRST Bank','FIRST Mayura','general','any',0.3333,'1 point per ₹150, valued at ₹0.50/point through Travel & Shop','Eligible spend before monthly accelerator','Issuer exclusions apply','https://www.idfcfirstbank.com/content/dam/idfcfirstbank/pdf/Mayura-CC-Rewards-Structure-TnC-28-05-25.pdf','2026-09-20'),
+('IDFC FIRST Bank','FIRST Wealth','general','any',0.1250,'1 point per ₹200, valued at ₹0.25/point','Eligible standard spend','Issuer exclusions apply','https://www.idfcfirst.bank.in/credit-card/wealth','2026-09-20'),
+('IDFC FIRST Bank','FIRST Wealth','dining','any',1.2500,'10X on eligible dining, valued at ₹0.25/point','Eligible dining spend','Issuer exclusions apply','https://www.idfcfirst.bank.in/credit-card/wealth','2026-09-20'),
+('IDFC FIRST Bank','FIRST Wealth','travel','any',1.2500,'10X on eligible travel, valued at ₹0.25/point','Eligible travel spend','Issuer exclusions apply','https://www.idfcfirst.bank.in/credit-card/wealth','2026-09-20')
+on conflict(issuer,card_name,category,channel) do update set
+ value_rate_percent=excluded.value_rate_percent,reward_label=excluded.reward_label,
+ condition_text=excluded.condition_text,exclusions_text=excluded.exclusions_text,
+ source_url=excluded.source_url,verified_at=excluded.verified_at,active=true;
