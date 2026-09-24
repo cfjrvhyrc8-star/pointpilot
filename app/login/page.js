@@ -69,7 +69,7 @@ export default function Login(){
     <div className="authCard">
       <div className="eyebrow">SECURE LOGIN</div>
       <h1>Open your PointPilot wallet</h1>
-      <p>Enter your name and email. We’ll send a one-time secure sign-in link — no password to remember.</p>
+      <p>Use Facebook or a one-time email link. No PointPilot password to remember.</p>
       <form onSubmit={submit}>
         <label className="authLabel">Name
           <input required type="text" autoComplete="name" placeholder="Your name" value={name} onChange={e=>setName(e.target.value)}/>
@@ -83,11 +83,11 @@ export default function Login(){
       </form>
       <div className="authDivider"><span>or continue with</span></div>
       <div className="socialAuth">
-        <button className="socialBtn" type="button" disabled={loading} onClick={()=>socialLogin("apple")}><span aria-hidden="true">●</span> Continue with Apple</button>
         <button className="socialBtn" type="button" disabled={loading} onClick={()=>socialLogin("facebook")}><span aria-hidden="true">f</span> Continue with Facebook</button>
+        <button className="socialBtn" type="button" disabled title="Apple sign-in is planned for a later release"><span aria-hidden="true">●</span> Apple — coming later</button>
       </div>
       {msg&&<div className={msg.startsWith("Secure")?"notice":"errorBox"}>{msg}</div>}
-      <small className="authHint">The sign-in link is one-time use. For production delivery, PointPilot uses Supabase Auth with a configured SMTP provider.</small>
+      <small className="authHint">Authentication is handled by Supabase. PointPilot never receives your Facebook password. Apple sign-in remains intentionally deferred.</small>
     </div>
   </main>;
 }

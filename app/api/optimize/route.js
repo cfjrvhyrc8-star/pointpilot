@@ -1,12 +1,12 @@
 import {NextResponse} from "next/server";
-import {travelportConfigured,travelportStaysConfigured,searchFlights,searchHotels} from "../../../lib/travel-provider.js";
+import {travelportConfigured,travelportStaysConfigured,travelportEnvironment,searchFlights,searchHotels} from "../../../lib/travel-provider.js";
 
 export async function GET(){
   return NextResponse.json({
     ok:true,
     provider:"Travelport",
     flightsConfigured:travelportConfigured(),
-    environment:"pre-production",
+    environment:travelportEnvironment(),
     hotelsStatus:"separate_stays_access_required"
   });
 }
@@ -18,6 +18,10 @@ export async function POST(req){
     if(p.mode==="flight"){
       if(!p.origin||!p.destination||!p.departureDate)
         return NextResponse.json({status:"error",message:"Origin, destination and departure date are required."},{status:400});
+      if(!/^[A-Za-z]{3}$/.test(p.origin)||!/^[A-Za-z]{3}$/.test(p.destination)||p.origin.toUpperCase()===p.destination.toUpperCase())
+        return NextResponse.json({status:"error",message:"Use two different three-letter IATA airport codes."},{status:400});
+      if(Number.isNaN(Date.parse(p.departureDate))||(p.returnDate&&(Number.isNaN(Date.parse(p.returnDate))||Date.parse(p.returnDate)<Date.parse(p.departureDate))))
+        return NextResponse.json({status:"error",message:"Choose valid travel dates; the return cannot be before departure."},{status:400});
 
       if(!travelportConfigured())
         return NextResponse.json({
@@ -28,7 +32,7 @@ export async function POST(req){
       const result=await searchFlights(p);
 
       if(result.status>=200&&result.status<300)
-        return NextResponse.json({status:"live",provider:"Travelport",data:result.data});
+        return NextResponse.json({status:"live",provider:"Travelport",environment:travelportEnvironment(),trackingId:result.trackingId||"",data:result.data});
 
       const providerMessage=
         result.data?.error_description||
@@ -53,7 +57,7 @@ export async function POST(req){
         code:result.status,
         message:String(providerMessage),
         trackingId:result.trackingId||"",
-        data:result.data
+        retryable:result.status===429||result.status>=500
       },{status:502});
     }
 
@@ -72,7 +76,7 @@ export async function POST(req){
           status:"live",
           provider:"Travelport Stays",
           trackingId:result.trackingId||"",
-          data:result.data
+          environment:travelportEnvironment(),data:result.data
         });
       }
 
@@ -95,7 +99,7 @@ export async function POST(req){
         code:result.status,
         trackingId:result.trackingId||"",
         message:String(providerMessage),
-        data:result.data
+        retryable:result.status===429||result.status>=500
       },{status:502});
     }
 

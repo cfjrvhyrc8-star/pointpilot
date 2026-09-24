@@ -64,7 +64,7 @@ function buildRewardOptions(wallet,cashFare,airline,rules){
    }
    const valuePerPoint=Number(direct.redemption_value);
    const maxPoints=Number(direct.max_redeem_points||Infinity);
-   const maxCoverage=mode==="direct_travel"?1:1;
+   const maxCoverage=Number(direct.max_booking_coverage||(/up to 70%/i.test(direct.notes||"")?.7:1));
    const usable=Math.min(balance,maxPoints);
    const value=Math.min(cashFare,usable*valuePerPoint,cashFare*maxCoverage);
    const pts=Math.min(usable,Math.ceil(value/valuePerPoint));
@@ -269,7 +269,7 @@ export default function Dashboard(){
  const total=useMemo(()=>wallet.reduce((a,x)=>a+Number(x.points||0),0),[wallet]); const holderName=String(user?.user_metadata?.full_name||user?.user_metadata?.name||"").trim()||"Wallet holder"; const holderEmail=user?.email||"";
  if(status==="loading")return <main className="page"><div className="loader">Loading your wallet…</div></main>;
  if(status==="error")return <main className="page"><div className="loadFailure"><div className="eyebrow">WALLET CONNECTION</div><h1>Your sign-in worked.</h1><p>We couldn’t retrieve the wallet just yet. Your cards have not been changed.</p><div className="errorBox">{loadError}</div><button className="btn primary" onClick={loadWallet}>Try loading wallet again</button><button className="linkBtn" onClick={()=>getSupabase().auth.signOut().finally(()=>location.replace("/login"))}>Sign in again</button></div></main>;
- return <main className="page"><nav className="nav"><b>Point<span>Pilot</span></b><div className="navAccount"><div><strong>{holderName}</strong><small>{holderEmail}</small></div><button className="linkBtn" onClick={()=>getSupabase().auth.signOut().then(()=>location.href="/")}>Sign out</button></div></nav>
+ return <main className="page"><nav className="nav"><b>Point<span>Pilot</span></b><div className="navAccount"><a className="linkBtn" href="/cards">India 30</a><div><strong>{holderName}</strong><small>{holderEmail}</small></div><button className="linkBtn" onClick={()=>getSupabase().auth.signOut().then(()=>location.href="/")}>Sign out</button></div></nav>
  <section className="dashHero atlasHeader"><div><div className="eyebrow">REWARDS INTELLIGENCE / INDIA</div><h1>Good evening, {holderName.split(" ")[0]||"there"}.</h1><p>Your rewards are ready to become something more useful than a number on a statement.</p></div><div className="total"><small>POINTS UNDER MANAGEMENT</small><strong>{total.toLocaleString("en-IN")}</strong><span>{wallet.length} cards · verified routes first</span></div></section>
  <CommandDeck wallet={wallet} onPlanTrip={()=>{setTab("flights");setTimeout(()=>document.querySelector(".toolArea")?.scrollIntoView({behavior:"smooth",block:"start"}),0)}} onValue={()=>{setTab("value");setTimeout(()=>document.querySelector(".toolArea")?.scrollIntoView({behavior:"smooth",block:"start"}),0)}} onWallet={()=>document.querySelector(".wallet")?.scrollIntoView({behavior:"smooth",block:"start"})} onRoutes={()=>document.querySelector(".bestUse")?.scrollIntoView({behavior:"smooth",block:"start"})}/>
  <SpendSmart wallet={wallet}/>

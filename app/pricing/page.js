@@ -38,7 +38,7 @@ export default function PricingPage(){
   return <main className="page pricingPage">
     <nav className="nav pricingNav">
       <Link className="brand" href="/">Point<span>Pilot</span></Link>
-      <div className="pricingNavLinks"><Link href="/">How it works</Link><Link className="linkBtn" href="/login">Sign in</Link></div>
+      <div className="pricingNavLinks"><Link href="/">How it works</Link><Link href="/cards">India 30</Link><Link className="linkBtn" href="/login">Sign in</Link></div>
     </nav>
 
     <section className="pricingHero">
