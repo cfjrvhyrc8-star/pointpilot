@@ -4,6 +4,7 @@ import {useCallback,useEffect,useMemo,useState} from "react";
 import {createClient} from "@supabase/supabase-js";
 import BestUseSection from "./BestUseSection.js";
 import SpendSmart from "./SpendSmart.js";
+import AirlineMiles from "./AirlineMiles.js";
 
 const getSupabase=()=>createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
 const within=(promise,ms,label)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label)),ms))]);
@@ -207,7 +208,7 @@ function CardDetails({wallet}){
  return <section className="cardDetails"><div className="sectionHead"><div><h2>Your cards, fully mapped</h2><p>Benefits, earning, travel perks, fees and redemption rules • issuer-verified metadata</p></div></div><div className="cardDetailGrid">{enriched.map(({wallet:w,card:c})=><article className="cardDetail" key={w.id}><div className="cardTop"><div><small>{c?.issuer||"Card"}</small><h3>{w.card_name}</h3></div><span>{Number(w.points||0).toLocaleString("en-IN")} pts</span></div>{c?<><div className="detailChips"><b>{c.network||"—"}</b><b>{c.annual_fee==null?"Fee n/a":c.annual_fee===0?"Lifetime free":"₹"+Number(c.annual_fee).toLocaleString("en-IN")+" + GST"}</b><b>{c.forex_markup==null?"Forex n/a":c.forex_markup===0?"0% forex":c.forex_markup+"% forex"}</b></div><dl><div><dt>Base rewards</dt><dd>{c.base_reward}</dd></div><div><dt>Accelerated rewards</dt><dd>{c.accelerated_reward}</dd></div><div><dt>Lounge</dt><dd>{c.lounge_benefit}</dd></div><div><dt>Travel</dt><dd>{c.travel_benefit}</dd></div><div><dt>Milestones</dt><dd>{c.milestone_benefit}</dd></div><div><dt>Redemption</dt><dd>{c.redemption_summary}</dd></div></dl><details><summary>All key benefits</summary><ul>{(c.key_benefits||[]).map((b,i)=><li key={i}>{b}</li>)}</ul></details><a className="sourceLink" href={c.source_url} target="_blank" rel="noreferrer">View issuer source ↗</a><small className="verifiedLine">Verified {String(c.verified_at||"").slice(0,10)||"—"}</small></>:<div className="notice">Detailed catalogue data is being added for this card.</div>}</article>)}</div></section>
 }
 
-function CommandDeck({wallet,onPlanTrip,onValue,onWallet,onRoutes}){
+function CommandDeck({wallet,onPlanTrip,onValue,onWallet,onRoutes,onMiles}){
  const total=wallet.reduce((sum,card)=>sum+Number(card.points||0),0);
  const hdfc=wallet.find(card=>String(card.card_name||"").toLowerCase().includes("diners black"));
  const icici=wallet.find(card=>String(card.card_name||"").toLowerCase().includes("times black"));
@@ -240,7 +241,8 @@ function CommandDeck({wallet,onPlanTrip,onValue,onWallet,onRoutes}){
      <button onClick={onPlanTrip}><i>01</i><span>Trip intelligence</span><small>Compare a live fare</small></button>
      <button onClick={onRoutes}><i>02</i><span>Route intelligence</span><small>See verified value</small></button>
      <button onClick={onWallet}><i>03</i><span>Wallet ledger</span><small>Track every balance</small></button>
-     <button onClick={onValue}><i>04</i><span>Value lab</span><small>Calculate ₹ / point</small></button>
+     <button onClick={onMiles}><i>04</i><span>Airline miles</span><small>Plan award flights</small></button>
+     <button onClick={onValue}><i>05</i><span>Value lab</span><small>Calculate ₹ / point</small></button>
    </nav>
  </section>}
 
@@ -271,9 +273,10 @@ export default function Dashboard(){
  if(status==="error")return <main className="page"><div className="loadFailure"><div className="eyebrow">WALLET CONNECTION</div><h1>Your sign-in worked.</h1><p>We couldn’t retrieve the wallet just yet. Your cards have not been changed.</p><div className="errorBox">{loadError}</div><button className="btn primary" onClick={loadWallet}>Try loading wallet again</button><button className="linkBtn" onClick={()=>getSupabase().auth.signOut().finally(()=>location.replace("/login"))}>Sign in again</button></div></main>;
  return <main className="page"><nav className="nav"><b>Point<span>Pilot</span></b><div className="navAccount"><a className="linkBtn" href="/cards">India 30</a><div><strong>{holderName}</strong><small>{holderEmail}</small></div><button className="linkBtn" onClick={()=>getSupabase().auth.signOut().then(()=>location.href="/")}>Sign out</button></div></nav>
  <section className="dashHero atlasHeader"><div><div className="eyebrow">REWARDS INTELLIGENCE / INDIA</div><h1>Good evening, {holderName.split(" ")[0]||"there"}.</h1><p>Your rewards are ready to become something more useful than a number on a statement.</p></div><div className="total"><small>POINTS UNDER MANAGEMENT</small><strong>{total.toLocaleString("en-IN")}</strong><span>{wallet.length} cards · verified routes first</span></div></section>
- <CommandDeck wallet={wallet} onPlanTrip={()=>{setTab("flights");setTimeout(()=>document.querySelector(".toolArea")?.scrollIntoView({behavior:"smooth",block:"start"}),0)}} onValue={()=>{setTab("value");setTimeout(()=>document.querySelector(".toolArea")?.scrollIntoView({behavior:"smooth",block:"start"}),0)}} onWallet={()=>document.querySelector(".wallet")?.scrollIntoView({behavior:"smooth",block:"start"})} onRoutes={()=>document.querySelector(".bestUse")?.scrollIntoView({behavior:"smooth",block:"start"})}/>
+ <CommandDeck wallet={wallet} onPlanTrip={()=>{setTab("flights");setTimeout(()=>document.querySelector(".toolArea")?.scrollIntoView({behavior:"smooth",block:"start"}),0)}} onValue={()=>{setTab("value");setTimeout(()=>document.querySelector(".toolArea")?.scrollIntoView({behavior:"smooth",block:"start"}),0)}} onWallet={()=>document.querySelector(".wallet")?.scrollIntoView({behavior:"smooth",block:"start"})} onRoutes={()=>document.querySelector(".bestUse")?.scrollIntoView({behavior:"smooth",block:"start"})} onMiles={()=>document.querySelector(".airMiles")?.scrollIntoView({behavior:"smooth",block:"start"})}/>
  <SpendSmart wallet={wallet}/>
  <WalletSection wallet={wallet} setWallet={setWallet}/>
+ <AirlineMiles wallet={wallet}/>
  <BestUseSection wallet={wallet}/>
  <CardDetails wallet={wallet}/>
  <section className="toolArea"><div className="toolTabs"><button className={tab==="flights"?"active":""} onClick={()=>setTab("flights")}>✈️ Flights</button><button className={tab==="value"?"active":""} onClick={()=>setTab("value")}>₹ Value Engine</button></div>{tab==="flights"?<FlightSearch/>:<ValueEngine/>}</section>
