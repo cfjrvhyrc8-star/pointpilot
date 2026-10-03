@@ -5,8 +5,8 @@ const plans = [
     name: "Explorer",
     price: "₹0",
     cadence: "Free to start",
-    summary: "For building a clear picture of what you already hold.",
-    features: ["Add and manage your rewards wallet", "Verified route reference for supported cards", "Redemption value calculator", "Live cash-fare comparison when available"],
+    summary: "For understanding the value and options already inside your wallet.",
+    features: ["Add cards, points and airline miles", "Rank your own cards for a purchase", "Calculate transparent redemption value", "Compare live cash fares when available"],
     action: "Start free",
     href: "/login",
     tone: "pricingFree"
@@ -15,8 +15,8 @@ const plans = [
     name: "PointPilot Plus",
     price: "₹999",
     cadence: "per year · inclusive of GST",
-    summary: "For travellers who want their points to lead every trip decision.",
-    features: ["Everything in Explorer", "Full card-rule intelligence for supported cards", "Saved trip briefs and route shortlists", "Priority access to new optimisation tools"],
+    summary: "For turning everyday spending and existing points into better travel decisions.",
+    features: ["Everything in Explorer", "Full supported card-rule intelligence", "Best-use and verified transfer paths", "Saved trip goals, shortfalls and route shortlists"],
     action: "Opening soon",
     href: "#availability",
     tone: "pricingFeatured",
@@ -26,8 +26,8 @@ const plans = [
     name: "PointPilot Pro",
     price: "₹2,499",
     cadence: "per year · inclusive of GST",
-    summary: "For people managing multiple cards, programmes and travel goals.",
-    features: ["Everything in Plus", "Advanced multi-card optimisation", "Transfer and redemption watchlists", "Early access to new intelligence features"],
+    summary: "For people coordinating multiple cards, programmes and ambitious travel goals.",
+    features: ["Everything in Plus", "Advanced multi-card spend optimisation", "Expiry, milestone and transfer watchlists", "Priority access to new trip intelligence"],
     action: "Opening soon",
     href: "#availability",
     tone: "pricingPro"
@@ -45,7 +45,7 @@ export default function PricingPage(){
       <div className="eyebrow">POINTPILOT MEMBERSHIP</div>
       <p className="pricingKicker">Simple access. Serious reward intelligence.</p>
       <h1>Keep more value<br/><em>in your wallet.</em></h1>
-      <p>Start free, then step up when PointPilot can help you make more confident decisions with the cards and points you already own.</p>
+      <p>Choose the right card now, use existing points intelligently, and map the smartest route to the trip you want.</p>
       <div className="pricingSignal"><span>✦</span> Every recommendation keeps its rules, caps, taxes and source context visible.</div>
     </section>
 
