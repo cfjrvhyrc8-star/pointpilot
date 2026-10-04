@@ -1,12 +1,7 @@
 "use client";
 
 import {useEffect,useMemo,useState} from "react";
-import {createClient} from "@supabase/supabase-js";
-
-const getSupabase=()=>createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-);
+import {getSupabase} from "../../lib/supabase-browser.js";
 const fmt=value=>Number(value||0).toLocaleString("en-IN");
 const daysUntil=value=>value?Math.ceil((new Date(`${value}T23:59:59`).getTime()-Date.now())/86400000):null;
 

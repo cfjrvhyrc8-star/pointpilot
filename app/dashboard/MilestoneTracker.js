@@ -1,9 +1,7 @@
 "use client";
 
 import {useEffect,useMemo,useState} from "react";
-import {createClient} from "@supabase/supabase-js";
-
-const getSupabase=()=>createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
+import {getSupabase} from "../../lib/supabase-browser.js";
 const money=value=>Number(value||0).toLocaleString("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0});
 const clean=value=>String(value||"").toLowerCase().replace(/credit card|metal edition|metal card|card|club|first|hdfc|icici|idfc|bank|american express india/g,"").replace(/[^a-z0-9]/g,"");
 const matches=(left,right)=>{const a=clean(left),b=clean(right);return Boolean(a&&b&&(a.includes(b)||b.includes(a)))};

@@ -1,9 +1,7 @@
 "use client";
 
 import {useEffect,useMemo,useState} from "react";
-import {createClient} from "@supabase/supabase-js";
-
-const getSupabase=()=>createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
+import {getSupabase} from "../../lib/supabase-browser.js";
 const categories=[
  {key:"general",label:"Everyday & shopping",icon:"◎",hint:"Retail, groceries and other eligible spend"},
  {key:"dining",label:"Dining & delivery",icon:"◒",hint:"Restaurants and eligible food delivery"},

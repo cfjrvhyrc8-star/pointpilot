@@ -1,7 +1,7 @@
 "use client";
 
 import {useCallback,useEffect,useMemo,useState} from "react";
-import {createClient} from "@supabase/supabase-js";
+import {clearPointPilotSession,getSupabase} from "../../lib/supabase-browser.js";
 import BestUseSection from "./BestUseSection.js";
 import SpendSmart from "./SpendSmart.js";
 import AirlineMiles from "./AirlineMiles.js";
@@ -9,7 +9,6 @@ import ActionCentre from "./ActionCentre.js";
 import MonthlyRewardPlan from "./MonthlyRewardPlan.js";
 import MilestoneTracker from "./MilestoneTracker.js";
 
-const getSupabase=()=>createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
 const within=(promise,ms,label)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label)),ms))]);
 
 function money(n,currency="INR"){return Number(n||0).toLocaleString("en-IN",{style:"currency",currency,maximumFractionDigits:0})}
@@ -265,6 +264,12 @@ export default function Dashboard(){
      const {data:{user:verifiedUser},error:userError}=await within(supabase.auth.getUser(),12000,"We could not verify the signed-in account.");
      if(userError) throw userError;
      if(!verifiedUser){location.replace("/login");return}
+     const expectedEmail=String(window.localStorage.getItem("pointpilot_expected_email")||"").toLowerCase();
+     if(expectedEmail&&String(verifiedUser.email||"").toLowerCase()!==expectedEmail){
+       await clearPointPilotSession();
+       location.replace(`/login?switch=1&account_mismatch=1`);
+       return;
+     }
      setUser(verifiedUser);
      const {data:w,error:walletError}=await within(supabase.from("wallet_cards").select("*").eq("user_id",verifiedUser.id).order("created_at"),12000,"The wallet request timed out. Please try again.");
      if(walletError) throw walletError;
@@ -289,7 +294,7 @@ export default function Dashboard(){
  const goTo=selector=>document.querySelector(selector)?.scrollIntoView({behavior:"smooth",block:"start"});
  const planTrip=()=>{setTab("flights");setTimeout(()=>goTo(".toolArea"),0)};
  const valuePoints=()=>{setTab("value");setTimeout(()=>goTo(".toolArea"),0)};
- const switchAccount=()=>getSupabase().auth.signOut({scope:"local"}).finally(()=>location.replace("/login?switch=1"));
+ const switchAccount=()=>clearPointPilotSession().finally(()=>location.replace("/login?switch=1"));
  return <main className="page dashboardPage"><nav className="nav"><b>Point<span>Pilot</span></b><div className="navAccount"><a className="linkBtn" href="/cards">India 30</a><div title="This email owns the wallet shown below"><strong>{holderName}</strong><small>Wallet for {holderEmail}</small></div><button className="linkBtn" onClick={switchAccount}>Switch account</button><button className="linkBtn" onClick={()=>getSupabase().auth.signOut().then(()=>location.href="/")}>Sign out</button></div></nav>
  <div className="dashboardWorkspace"><aside className="dashboardRail" aria-label="Dashboard navigation"><div className="railBrand">P<span>✦</span></div><button onClick={()=>goTo(".atlasHeader")}><i>⌂</i><span>Today</span></button><button onClick={()=>goTo(".monthlyPlan")}><i>∑</i><span>My plan</span></button><button onClick={()=>goTo(".milestoneTracker")}><i>◎</i><span>Targets</span></button><button onClick={()=>goTo(".spendSmart")}><i>₹</i><span>Spend</span></button><button onClick={()=>goTo(".bestUse")}><i>◇</i><span>Points</span></button><button onClick={planTrip}><i>✈</i><span>Trips</span></button><button onClick={()=>goTo(".airMiles")}><i>◌</i><span>Miles</span></button><button onClick={()=>goTo(".wallet")}><i>▤</i><span>Wallet</span></button></aside><div className="dashboardContent">
  <section className="dashHero atlasHeader"><div><div className="eyebrow">REWARDS INTELLIGENCE / INDIA</div><h1>{greeting}, {holderName.split(" ")[0]||"there"}.</h1><p>One wallet for every spend, every point and the trip you want next.</p></div><div className="total"><small>POINTS UNDER MANAGEMENT</small><strong>{total.toLocaleString("en-IN")}</strong><span>{wallet.length} cards · verified routes first</span></div></section>

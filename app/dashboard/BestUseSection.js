@@ -1,7 +1,6 @@
 "use client";
 import {useEffect,useMemo,useState} from "react";
-import {createClient} from "@supabase/supabase-js";
-const getSupabase=()=>createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
+import {getSupabase} from "../../lib/supabase-browser.js";
 function clean(v){return String(v||"").toLowerCase().replace(/credit card|metal card|card|club|first|hdfc|icici|idfc|bank|american express india|scapia federal|federal/g,"").replace(/[^a-z0-9]/g,"")}
 function matches(cardName,rule){const a=clean(cardName),b=clean(rule?.card_name);return Boolean(b&&(a.includes(b)||b.includes(a)))}
 function fmt(n){return Number(n||0).toLocaleString("en-IN")}

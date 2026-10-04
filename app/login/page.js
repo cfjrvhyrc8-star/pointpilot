@@ -1,13 +1,8 @@
 "use client";
 
 import {useEffect,useState} from "react";
-import {createClient} from "@supabase/supabase-js";
 import Link from "next/link";
-
-const getSupabase=()=>createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-);
+import {clearPointPilotSession,getSupabase} from "../../lib/supabase-browser.js";
 
 function friendlyError(error){
   const message=String(error?.message||"");
@@ -29,11 +24,9 @@ export default function Login(){
   },[]);
 
   async function clearLocalSession(){
-    const supabase=getSupabase();
-    const {data:{session}}=await supabase.auth.getSession();
-    if(session)await supabase.auth.signOut({scope:"local"});
+    await clearPointPilotSession();
     setActiveEmail("");
-    return supabase;
+    return getSupabase();
   }
 
   async function socialLogin(provider){
@@ -42,7 +35,7 @@ export default function Login(){
     const supabase=await clearLocalSession();
     const {error}=await supabase.auth.signInWithOAuth({
       provider,
-      options:{redirectTo:window.location.origin+"/dashboard",queryParams:provider==="facebook"?{auth_type:"reauthorize"}:undefined}
+      options:{redirectTo:window.location.origin+"/auth/callback",queryParams:provider==="facebook"?{auth_type:"reauthorize"}:undefined}
     });
     if(error){
       setLoading(false);
@@ -58,10 +51,11 @@ export default function Login(){
     const cleanName=name.trim();
     const cleanEmail=email.trim().toLowerCase();
     const supabase=await clearLocalSession();
+    window.localStorage.setItem("pointpilot_expected_email",cleanEmail);
     const{error}=await supabase.auth.signInWithOtp({
       email:cleanEmail,
       options:{
-        emailRedirectTo:window.location.origin+"/dashboard",
+        emailRedirectTo:window.location.origin+"/auth/callback",
         data:{full_name:cleanName}
       }
     });
@@ -69,6 +63,7 @@ export default function Login(){
     setLoading(false);
 
     if(error){
+      window.localStorage.removeItem("pointpilot_expected_email");
       setMsg(friendlyError(error));
       return;
     }

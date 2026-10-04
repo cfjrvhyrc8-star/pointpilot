@@ -1,9 +1,8 @@
 "use client";
 import {useEffect,useMemo,useState} from "react";
-import {createClient} from "@supabase/supabase-js";
+import {getSupabase} from "../../lib/supabase-browser.js";
 import {AIRLINE_PROGRAMS,AIRLINE_PROGRAMS_REVIEWED_AT,programForPartner} from "../../lib/airline-programs.js";
 
-const getSupabase=()=>createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
 const fmt=n=>Number(n||0).toLocaleString("en-IN");
 const clean=v=>String(v||"").toLowerCase().replace(/credit card|metal card|card|club|first|hdfc|icici|idfc|bank|american express india|scapia federal|federal/g,"").replace(/[^a-z0-9]/g,"");
 const matches=(cardName,rule)=>{const a=clean(cardName),b=clean(rule?.card_name);return Boolean(b&&(a.includes(b)||b.includes(a)))};
