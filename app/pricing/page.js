@@ -16,7 +16,7 @@ const plans = [
     price: "₹999",
     cadence: "per year · inclusive of GST",
     summary: "For turning everyday spending and existing points into better travel decisions.",
-    features: ["Everything in Explorer", "Full supported card-rule intelligence", "Best-use and verified transfer paths", "Saved trip goals, shortfalls and route shortlists"],
+    features: ["Everything in Explorer", "Saved monthly reward plan", "Annual incremental-value calculation", "Best-use paths, trip goals and shortfall planning"],
     action: "Opening soon",
     href: "#availability",
     tone: "pricingFeatured",
@@ -27,7 +27,7 @@ const plans = [
     price: "₹2,499",
     cadence: "per year · inclusive of GST",
     summary: "For people coordinating multiple cards, programmes and ambitious travel goals.",
-    features: ["Everything in Plus", "Advanced multi-card spend optimisation", "Expiry, milestone and transfer watchlists", "Priority access to new trip intelligence"],
+    features: ["Everything in Plus", "Milestone and fee-waiver tracking", "Expiry and transfer watchlists", "Keep, downgrade or close guidance"],
     action: "Opening soon",
     href: "#availability",
     tone: "pricingPro"
