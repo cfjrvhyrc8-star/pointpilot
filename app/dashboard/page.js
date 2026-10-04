@@ -11,6 +11,11 @@ const getSupabase=()=>createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.
 const within=(promise,ms,label)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label)),ms))]);
 
 function money(n,currency="INR"){return Number(n||0).toLocaleString("en-IN",{style:"currency",currency,maximumFractionDigits:0})}
+function greetingForHour(hour){
+ if(hour<12)return "Good morning";
+ if(hour<17)return "Good afternoon";
+ return "Good evening";
+}
 
 const FALLBACK_REWARD_RULES=[
  {issuer:"IDFC FIRST Bank",card_name:"Mayura",currency:"IDFC FIRST Reward Points",partner:"IDFC FIRST Travel & Shop",partner_type:"direct_travel",redemption_value:0.50,redemption_currency:"INR",route_status:"verified",notes:"1 Reward Point = ₹0.50 for hotel & flight bookings via Travel & Shop; ₹0.25 elsewhere.",verified_at:"2026-09-21",source_url:"https://www.idfcfirstbank.com/content/dam/idfcfirstbank/pdf/Mayura-CC-Rewards-Structure-TnC-28-05-25.pdf"},
@@ -248,7 +253,7 @@ function CommandDeck({wallet,onPlanTrip,onValue,onWallet,onRoutes,onMiles}){
  </section>}
 
 export default function Dashboard(){
- const[wallet,setWallet]=useState([]),[user,setUser]=useState(null),[status,setStatus]=useState("loading"),[loadError,setLoadError]=useState(""),[tab,setTab]=useState("flights");
+ const[wallet,setWallet]=useState([]),[user,setUser]=useState(null),[status,setStatus]=useState("loading"),[loadError,setLoadError]=useState(""),[tab,setTab]=useState("flights"),[greeting,setGreeting]=useState("Welcome back");
  const loadWallet=useCallback(async()=>{
    setStatus("loading"); setLoadError("");
    try{
@@ -268,7 +273,7 @@ export default function Dashboard(){
      setStatus("error");
    }
  },[]);
- useEffect(()=>{loadWallet()},[loadWallet]);
+ useEffect(()=>{loadWallet();setGreeting(greetingForHour(new Date().getHours()))},[loadWallet]);
  const total=useMemo(()=>wallet.reduce((a,x)=>a+Number(x.points||0),0),[wallet]); const holderName=String(user?.user_metadata?.full_name||user?.user_metadata?.name||"").trim()||"Wallet holder"; const holderEmail=user?.email||"";
  if(status==="loading")return <main className="page"><div className="loader">Loading your wallet…</div></main>;
  if(status==="error")return <main className="page"><div className="loadFailure"><div className="eyebrow">WALLET CONNECTION</div><h1>Your sign-in worked.</h1><p>We couldn’t retrieve the wallet just yet. Your cards have not been changed.</p><div className="errorBox">{loadError}</div><button className="btn primary" onClick={loadWallet}>Try loading wallet again</button><button className="linkBtn" onClick={()=>getSupabase().auth.signOut().finally(()=>location.replace("/login"))}>Sign in again</button></div></main>;
@@ -277,7 +282,7 @@ export default function Dashboard(){
  const valuePoints=()=>{setTab("value");setTimeout(()=>goTo(".toolArea"),0)};
  return <main className="page dashboardPage"><nav className="nav"><b>Point<span>Pilot</span></b><div className="navAccount"><a className="linkBtn" href="/cards">India 30</a><div><strong>{holderName}</strong><small>{holderEmail}</small></div><button className="linkBtn" onClick={()=>getSupabase().auth.signOut().then(()=>location.href="/")}>Sign out</button></div></nav>
  <div className="dashboardWorkspace"><aside className="dashboardRail" aria-label="Dashboard navigation"><div className="railBrand">P<span>✦</span></div><button onClick={()=>goTo(".atlasHeader")}><i>⌂</i><span>Today</span></button><button onClick={()=>goTo(".spendSmart")}><i>₹</i><span>Spend</span></button><button onClick={()=>goTo(".bestUse")}><i>◇</i><span>Points</span></button><button onClick={planTrip}><i>✈</i><span>Trips</span></button><button onClick={()=>goTo(".airMiles")}><i>◌</i><span>Miles</span></button><button onClick={()=>goTo(".wallet")}><i>▤</i><span>Wallet</span></button></aside><div className="dashboardContent">
- <section className="dashHero atlasHeader"><div><div className="eyebrow">REWARDS INTELLIGENCE / INDIA</div><h1>Good evening, {holderName.split(" ")[0]||"there"}.</h1><p>One wallet for every spend, every point and the trip you want next.</p></div><div className="total"><small>POINTS UNDER MANAGEMENT</small><strong>{total.toLocaleString("en-IN")}</strong><span>{wallet.length} cards · verified routes first</span></div></section>
+ <section className="dashHero atlasHeader"><div><div className="eyebrow">REWARDS INTELLIGENCE / INDIA</div><h1>{greeting}, {holderName.split(" ")[0]||"there"}.</h1><p>One wallet for every spend, every point and the trip you want next.</p></div><div className="total"><small>POINTS UNDER MANAGEMENT</small><strong>{total.toLocaleString("en-IN")}</strong><span>{wallet.length} cards · verified routes first</span></div></section>
  <ActionCentre wallet={wallet} userId={user?.id} onSpend={()=>goTo(".spendSmart")} onUsePoints={()=>goTo(".bestUse")} onPlanTrip={planTrip} onMiles={()=>goTo(".airMiles")} onWallet={()=>goTo(".wallet")}/>
  <CommandDeck wallet={wallet} onPlanTrip={planTrip} onValue={valuePoints} onWallet={()=>goTo(".wallet")} onRoutes={()=>goTo(".bestUse")} onMiles={()=>goTo(".airMiles")}/>
  <SpendSmart wallet={wallet}/>
