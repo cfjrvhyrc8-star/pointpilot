@@ -28,7 +28,13 @@ export default function AuthCallback(){
         await clearPointPilotSession();
         throw new Error(`The link signed in ${actual||"a different account"}, not ${expected}. Please request a fresh link for ${expected}.`);
       }
+      const expectedName=String(window.localStorage.getItem("pointpilot_expected_name")||"").trim();
+      if(expectedName){
+        const{error:nameError}=await supabase.auth.updateUser({data:{full_name:expectedName}});
+        if(nameError)throw nameError;
+      }
       window.localStorage.removeItem("pointpilot_expected_email");
+      window.localStorage.removeItem("pointpilot_expected_name");
       window.localStorage.setItem("pointpilot_authenticated_user_id",user.id);
       window.location.replace("/dashboard");
     })().catch(async error=>{

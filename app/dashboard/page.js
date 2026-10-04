@@ -17,6 +17,14 @@ function greetingForHour(hour){
  if(hour<17)return "Good afternoon";
  return "Good evening";
 }
+function accountDisplayName(user){
+ const saved=String(user?.user_metadata?.full_name||user?.user_metadata?.name||"").trim();
+ if(saved)return saved;
+ const localPart=String(user?.email||"").split("@")[0];
+ const parts=localPart.split(/[^a-zA-Z]+/).filter(Boolean);
+ const fallback=parts.at(-1)||"there";
+ return fallback.charAt(0).toUpperCase()+fallback.slice(1);
+}
 
 const FALLBACK_REWARD_RULES=[
  {issuer:"IDFC FIRST Bank",card_name:"Mayura",currency:"IDFC FIRST Reward Points",partner:"IDFC FIRST Travel & Shop",partner_type:"direct_travel",redemption_value:0.50,redemption_currency:"INR",route_status:"verified",notes:"1 Reward Point = ₹0.50 for hotel & flight bookings via Travel & Shop; ₹0.25 elsewhere.",verified_at:"2026-09-21",source_url:"https://www.idfcfirstbank.com/content/dam/idfcfirstbank/pdf/Mayura-CC-Rewards-Structure-TnC-28-05-25.pdf"},
@@ -288,7 +296,7 @@ export default function Dashboard(){
    });
    return()=>subscription.unsubscribe();
  },[loadWallet]);
- const total=useMemo(()=>wallet.reduce((a,x)=>a+Number(x.points||0),0),[wallet]); const holderName=String(user?.user_metadata?.full_name||user?.user_metadata?.name||"").trim()||"Wallet holder"; const holderEmail=user?.email||"";
+ const total=useMemo(()=>wallet.reduce((a,x)=>a+Number(x.points||0),0),[wallet]); const holderName=accountDisplayName(user); const holderEmail=user?.email||"";
  if(status==="loading")return <main className="page"><div className="loader">Loading your wallet…</div></main>;
  if(status==="error")return <main className="page"><div className="loadFailure"><div className="eyebrow">WALLET CONNECTION</div><h1>Your sign-in worked.</h1><p>We couldn’t retrieve the wallet just yet. Your cards have not been changed.</p><div className="errorBox">{loadError}</div><button className="btn primary" onClick={loadWallet}>Try loading wallet again</button><button className="linkBtn" onClick={()=>getSupabase().auth.signOut().finally(()=>location.replace("/login"))}>Sign in again</button></div></main>;
  const goTo=selector=>document.querySelector(selector)?.scrollIntoView({behavior:"smooth",block:"start"});

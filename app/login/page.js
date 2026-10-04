@@ -52,6 +52,7 @@ export default function Login(){
     const cleanEmail=email.trim().toLowerCase();
     const supabase=await clearLocalSession();
     window.localStorage.setItem("pointpilot_expected_email",cleanEmail);
+    window.localStorage.setItem("pointpilot_expected_name",cleanName);
     const{error}=await supabase.auth.signInWithOtp({
       email:cleanEmail,
       options:{
@@ -64,6 +65,7 @@ export default function Login(){
 
     if(error){
       window.localStorage.removeItem("pointpilot_expected_email");
+      window.localStorage.removeItem("pointpilot_expected_name");
       setMsg(friendlyError(error));
       return;
     }
