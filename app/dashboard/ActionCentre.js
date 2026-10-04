@@ -10,7 +10,7 @@ const getSupabase=()=>createClient(
 const fmt=value=>Number(value||0).toLocaleString("en-IN");
 const daysUntil=value=>value?Math.ceil((new Date(`${value}T23:59:59`).getTime()-Date.now())/86400000):null;
 
-export default function ActionCentre({wallet,userId,onPlan,onSpend,onUsePoints,onPlanTrip,onMiles,onWallet}){
+export default function ActionCentre({wallet,userId,onPlan,onMilestones,onSpend,onUsePoints,onPlanTrip,onMiles,onWallet}){
   const [mileBalances,setMileBalances]=useState([]);
 
   useEffect(()=>{
@@ -40,6 +40,7 @@ export default function ActionCentre({wallet,userId,onPlan,onSpend,onUsePoints,o
     actions.push({tone:"urgent",number:"01",label:"EXPIRY WATCH",title:`${fmt(insight.expiring.miles)} miles need attention`,detail:`${insight.expiring.program_code} has a recorded expiry in ${insight.expiring.days} day${insight.expiring.days===1?"":"s"}. Check the airline before transferring or booking.`,cta:"Review miles",onClick:onMiles});
   }
   actions.push({tone:"navy",number:String(actions.length+1).padStart(2,"0"),label:"MONTHLY PLAN",title:"Find the value hiding in your month",detail:"Route every spend category across your wallet and measure the annual improvement over using one default card.",cta:"Build my plan",onClick:onPlan});
+  actions.push({tone:"urgent",number:String(actions.length+1).padStart(2,"0"),label:"TARGET WATCH",title:"Protect milestone value and annual fees",detail:"Record statement spend once, then see the verified threshold, remaining amount and benefit before the cycle closes.",cta:"Track targets",onClick:onMilestones});
   if(insight.top){
     actions.push({tone:"violet",number:String(actions.length+1).padStart(2,"0"),label:"POINTS TO DEPLOY",title:`Put ${insight.top.card_name} to work`,detail:`Your largest card balance is ${fmt(insight.top.points)} points. Compare only verified redemption routes before moving them.`,cta:"Find best use",onClick:onUsePoints});
   }
