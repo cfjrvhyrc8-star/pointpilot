@@ -260,13 +260,13 @@ export default function Dashboard(){
    setStatus("loading"); setLoadError("");
    try{
      const supabase=getSupabase();
-     // Read the magic-link session from local storage before asking Auth over the network.
-     // The following wallet request still carries the JWT, so owner-only RLS remains enforced.
-     const {data:{session},error:sessionError}=await within(supabase.auth.getSession(),12000,"The saved sign-in session took too long to respond.");
-     if(sessionError) throw sessionError;
-     if(!session?.user){location.replace("/login");return}
-     setUser(session.user);
-     const {data:w,error:walletError}=await within(supabase.from("wallet_cards").select("*").eq("user_id",session.user.id).order("created_at"),12000,"The wallet request timed out. Please try again.");
+     // Verify the stored JWT with Supabase Auth before reading account-bound data.
+     // getSession() alone only reads browser storage and must not establish wallet identity.
+     const {data:{user:verifiedUser},error:userError}=await within(supabase.auth.getUser(),12000,"We could not verify the signed-in account.");
+     if(userError) throw userError;
+     if(!verifiedUser){location.replace("/login");return}
+     setUser(verifiedUser);
+     const {data:w,error:walletError}=await within(supabase.from("wallet_cards").select("*").eq("user_id",verifiedUser.id).order("created_at"),12000,"The wallet request timed out. Please try again.");
      if(walletError) throw walletError;
      setWallet(w||[]); setStatus("ready");
    }catch(error){
@@ -275,14 +275,22 @@ export default function Dashboard(){
      setStatus("error");
    }
  },[]);
- useEffect(()=>{loadWallet();setGreeting(greetingForHour(new Date().getHours()))},[loadWallet]);
+ useEffect(()=>{
+   loadWallet();setGreeting(greetingForHour(new Date().getHours()));
+   const supabase=getSupabase();
+   const{data:{subscription}}=supabase.auth.onAuthStateChange((event,nextSession)=>{
+     if(event==="SIGNED_OUT"||!nextSession?.user)location.replace("/login");
+   });
+   return()=>subscription.unsubscribe();
+ },[loadWallet]);
  const total=useMemo(()=>wallet.reduce((a,x)=>a+Number(x.points||0),0),[wallet]); const holderName=String(user?.user_metadata?.full_name||user?.user_metadata?.name||"").trim()||"Wallet holder"; const holderEmail=user?.email||"";
  if(status==="loading")return <main className="page"><div className="loader">Loading your wallet…</div></main>;
  if(status==="error")return <main className="page"><div className="loadFailure"><div className="eyebrow">WALLET CONNECTION</div><h1>Your sign-in worked.</h1><p>We couldn’t retrieve the wallet just yet. Your cards have not been changed.</p><div className="errorBox">{loadError}</div><button className="btn primary" onClick={loadWallet}>Try loading wallet again</button><button className="linkBtn" onClick={()=>getSupabase().auth.signOut().finally(()=>location.replace("/login"))}>Sign in again</button></div></main>;
  const goTo=selector=>document.querySelector(selector)?.scrollIntoView({behavior:"smooth",block:"start"});
  const planTrip=()=>{setTab("flights");setTimeout(()=>goTo(".toolArea"),0)};
  const valuePoints=()=>{setTab("value");setTimeout(()=>goTo(".toolArea"),0)};
- return <main className="page dashboardPage"><nav className="nav"><b>Point<span>Pilot</span></b><div className="navAccount"><a className="linkBtn" href="/cards">India 30</a><div><strong>{holderName}</strong><small>{holderEmail}</small></div><button className="linkBtn" onClick={()=>getSupabase().auth.signOut().then(()=>location.href="/")}>Sign out</button></div></nav>
+ const switchAccount=()=>getSupabase().auth.signOut({scope:"local"}).finally(()=>location.replace("/login?switch=1"));
+ return <main className="page dashboardPage"><nav className="nav"><b>Point<span>Pilot</span></b><div className="navAccount"><a className="linkBtn" href="/cards">India 30</a><div title="This email owns the wallet shown below"><strong>{holderName}</strong><small>Wallet for {holderEmail}</small></div><button className="linkBtn" onClick={switchAccount}>Switch account</button><button className="linkBtn" onClick={()=>getSupabase().auth.signOut().then(()=>location.href="/")}>Sign out</button></div></nav>
  <div className="dashboardWorkspace"><aside className="dashboardRail" aria-label="Dashboard navigation"><div className="railBrand">P<span>✦</span></div><button onClick={()=>goTo(".atlasHeader")}><i>⌂</i><span>Today</span></button><button onClick={()=>goTo(".monthlyPlan")}><i>∑</i><span>My plan</span></button><button onClick={()=>goTo(".milestoneTracker")}><i>◎</i><span>Targets</span></button><button onClick={()=>goTo(".spendSmart")}><i>₹</i><span>Spend</span></button><button onClick={()=>goTo(".bestUse")}><i>◇</i><span>Points</span></button><button onClick={planTrip}><i>✈</i><span>Trips</span></button><button onClick={()=>goTo(".airMiles")}><i>◌</i><span>Miles</span></button><button onClick={()=>goTo(".wallet")}><i>▤</i><span>Wallet</span></button></aside><div className="dashboardContent">
  <section className="dashHero atlasHeader"><div><div className="eyebrow">REWARDS INTELLIGENCE / INDIA</div><h1>{greeting}, {holderName.split(" ")[0]||"there"}.</h1><p>One wallet for every spend, every point and the trip you want next.</p></div><div className="total"><small>POINTS UNDER MANAGEMENT</small><strong>{total.toLocaleString("en-IN")}</strong><span>{wallet.length} cards · verified routes first</span></div></section>
  <ActionCentre wallet={wallet} userId={user?.id} onPlan={()=>goTo(".monthlyPlan")} onMilestones={()=>goTo(".milestoneTracker")} onSpend={()=>goTo(".spendSmart")} onUsePoints={()=>goTo(".bestUse")} onPlanTrip={planTrip} onMiles={()=>goTo(".airMiles")} onWallet={()=>goTo(".wallet")}/>

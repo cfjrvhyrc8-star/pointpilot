@@ -1,6 +1,6 @@
 "use client";
 
-import {useState} from "react";
+import {useEffect,useState} from "react";
 import {createClient} from "@supabase/supabase-js";
 import Link from "next/link";
 
@@ -22,13 +22,27 @@ export default function Login(){
   const[email,setEmail]=useState("");
   const[msg,setMsg]=useState("");
   const[loading,setLoading]=useState(false);
+  const[activeEmail,setActiveEmail]=useState("");
+
+  useEffect(()=>{
+    getSupabase().auth.getUser().then(({data})=>setActiveEmail(data.user?.email||""));
+  },[]);
+
+  async function clearLocalSession(){
+    const supabase=getSupabase();
+    const {data:{session}}=await supabase.auth.getSession();
+    if(session)await supabase.auth.signOut({scope:"local"});
+    setActiveEmail("");
+    return supabase;
+  }
 
   async function socialLogin(provider){
     setMsg("");
     setLoading(true);
-    const {error}=await getSupabase().auth.signInWithOAuth({
+    const supabase=await clearLocalSession();
+    const {error}=await supabase.auth.signInWithOAuth({
       provider,
-      options:{redirectTo:window.location.origin+"/dashboard"}
+      options:{redirectTo:window.location.origin+"/dashboard",queryParams:provider==="facebook"?{auth_type:"reauthorize"}:undefined}
     });
     if(error){
       setLoading(false);
@@ -43,9 +57,7 @@ export default function Login(){
 
     const cleanName=name.trim();
     const cleanEmail=email.trim().toLowerCase();
-    window.localStorage.setItem("pointpilot_holder_name",cleanName);
-
-    const supabase=getSupabase();
+    const supabase=await clearLocalSession();
     const{error}=await supabase.auth.signInWithOtp({
       email:cleanEmail,
       options:{
@@ -70,6 +82,7 @@ export default function Login(){
       <div className="eyebrow">SECURE LOGIN</div>
       <h1>Open your PointPilot wallet</h1>
       <p>Use Facebook or a one-time email link. No PointPilot password to remember.</p>
+      {activeEmail&&<div className="accountSwitchNotice"><span>Currently signed in as <strong>{activeEmail}</strong></span><button type="button" onClick={clearLocalSession}>Use another account</button></div>}
       <form onSubmit={submit}>
         <label className="authLabel">Name
           <input required type="text" autoComplete="name" placeholder="Your name" value={name} onChange={e=>setName(e.target.value)}/>
@@ -87,7 +100,7 @@ export default function Login(){
         <button className="socialBtn" type="button" disabled title="Apple sign-in is planned for a later release"><span aria-hidden="true">●</span> Apple — coming later</button>
       </div>
       {msg&&<div className={msg.startsWith("Secure")?"notice":"errorBox"}>{msg}</div>}
-      <small className="authHint">Authentication is handled by Supabase. PointPilot never receives your Facebook password. Apple sign-in remains intentionally deferred.</small>
+      <small className="authHint">Authentication is handled by Supabase. PointPilot never receives your Facebook password. Facebook uses the account currently active on facebook.com; for a different person, use their email link or switch Facebook accounts first. Apple sign-in remains intentionally deferred.</small>
     </div>
   </main>;
 }
