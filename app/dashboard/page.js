@@ -8,6 +8,7 @@ import AirlineMiles from "./AirlineMiles.js";
 import ActionCentre from "./ActionCentre.js";
 import MonthlyRewardPlan from "./MonthlyRewardPlan.js";
 import MilestoneTracker from "./MilestoneTracker.js";
+import TripGoal from "./TripGoal.js";
 
 const within=(promise,ms,label)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label)),ms))]);
 
@@ -304,10 +305,11 @@ export default function Dashboard(){
  const valuePoints=()=>{setTab("value");setTimeout(()=>goTo(".toolArea"),0)};
  const switchAccount=()=>clearPointPilotSession().finally(()=>location.replace("/login?switch=1"));
  return <main className="page dashboardPage"><nav className="nav"><b>Point<span>Pilot</span></b><div className="navAccount"><a className="linkBtn" href="/cards">India 30</a><div title="This email owns the wallet shown below"><strong>{holderName}</strong><small>Wallet for {holderEmail}</small></div><button className="linkBtn" onClick={switchAccount}>Switch account</button><button className="linkBtn" onClick={()=>getSupabase().auth.signOut().then(()=>location.href="/")}>Sign out</button></div></nav>
- <div className="dashboardWorkspace"><aside className="dashboardRail" aria-label="Dashboard navigation"><div className="railBrand">P<span>✦</span></div><button onClick={()=>goTo(".atlasHeader")}><i>⌂</i><span>Today</span></button><button onClick={()=>goTo(".monthlyPlan")}><i>∑</i><span>My plan</span></button><button onClick={()=>goTo(".milestoneTracker")}><i>◎</i><span>Targets</span></button><button onClick={()=>goTo(".spendSmart")}><i>₹</i><span>Spend</span></button><button onClick={()=>goTo(".bestUse")}><i>◇</i><span>Points</span></button><button onClick={planTrip}><i>✈</i><span>Trips</span></button><button onClick={()=>goTo(".airMiles")}><i>◌</i><span>Miles</span></button><button onClick={()=>goTo(".wallet")}><i>▤</i><span>Wallet</span></button></aside><div className="dashboardContent">
+ <div className="dashboardWorkspace"><aside className="dashboardRail" aria-label="Dashboard navigation"><div className="railBrand">P<span>✦</span></div><button onClick={()=>goTo(".atlasHeader")}><i>⌂</i><span>Today</span></button><button onClick={()=>goTo(".tripGoal")}><i>✦</i><span>My trip</span></button><button onClick={()=>goTo(".monthlyPlan")}><i>∑</i><span>My plan</span></button><button onClick={()=>goTo(".milestoneTracker")}><i>◎</i><span>Targets</span></button><button onClick={()=>goTo(".spendSmart")}><i>₹</i><span>Spend</span></button><button onClick={()=>goTo(".bestUse")}><i>◇</i><span>Points</span></button><button onClick={planTrip}><i>✈</i><span>Search</span></button><button onClick={()=>goTo(".airMiles")}><i>◌</i><span>Miles</span></button><button onClick={()=>goTo(".wallet")}><i>▤</i><span>Wallet</span></button></aside><div className="dashboardContent">
  <section className="dashHero atlasHeader"><div><div className="eyebrow">REWARDS INTELLIGENCE / INDIA</div><h1>{greeting}, {holderName.split(" ")[0]||"there"}.</h1><p>One wallet for every spend, every point and the trip you want next.</p></div><div className="total"><small>POINTS UNDER MANAGEMENT</small><strong>{total.toLocaleString("en-IN")}</strong><span>{wallet.length} cards · verified routes first</span></div></section>
  <ActionCentre wallet={wallet} userId={user?.id} onPlan={()=>goTo(".monthlyPlan")} onMilestones={()=>goTo(".milestoneTracker")} onSpend={()=>goTo(".spendSmart")} onUsePoints={()=>goTo(".bestUse")} onPlanTrip={planTrip} onMiles={()=>goTo(".airMiles")} onWallet={()=>goTo(".wallet")}/>
  <CommandDeck wallet={wallet} onPlanTrip={planTrip} onValue={valuePoints} onWallet={()=>goTo(".wallet")} onRoutes={()=>goTo(".bestUse")} onMiles={()=>goTo(".airMiles")}/>
+ <TripGoal wallet={wallet} userId={user?.id}/>
  <MonthlyRewardPlan wallet={wallet} userId={user?.id}/>
  <MilestoneTracker wallet={wallet} userId={user?.id}/>
  <SpendSmart wallet={wallet}/>
