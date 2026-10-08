@@ -11,7 +11,7 @@ export default function ActionCentre({wallet,userId,onTrip,onPlan,onMilestones,o
   const [goal,setGoal]=useState(null);
   const [rewardRules,setRewardRules]=useState([]);
   const [revision,setRevision]=useState(0);
-  useEffect(()=>{const refresh=()=>setRevision(value=>value+1);window.addEventListener("pointpilot:trip-saved",refresh);return()=>window.removeEventListener("pointpilot:trip-saved",refresh)},[]);
+  useEffect(()=>{const refresh=()=>setRevision(value=>value+1);window.addEventListener("pointpilot:trip-saved",refresh);window.addEventListener("pointpilot:miles-changed",refresh);return()=>{window.removeEventListener("pointpilot:trip-saved",refresh);window.removeEventListener("pointpilot:miles-changed",refresh)}},[]);
 
   useEffect(()=>{
     if(!userId)return;
@@ -35,7 +35,7 @@ export default function ActionCentre({wallet,userId,onTrip,onPlan,onMilestones,o
       .map(row=>({...row,days:daysUntil(row.expiry_date)}))
       .filter(row=>row.days!=null&&row.days>=0&&row.days<=90)
       .sort((a,b)=>a.days-b.days)[0];
-    const tripFunding=goal?buildAwardFunding({wallet,rules:rewardRules,balances:mileBalances,programCode:goal.program_code,milesRequired:goal.miles_required,cashFare:goal.cash_fare,taxes:goal.taxes}):null;
+    const tripFunding=goal&&Number(goal.miles_required)>0?buildAwardFunding({wallet,rules:rewardRules,balances:mileBalances,programCode:goal.program_code,milesRequired:goal.miles_required,cashFare:goal.cash_fare,taxes:goal.taxes}):null;
     return{top,total,withBalance,expiring,totalMiles:mileBalances.reduce((sum,row)=>sum+Number(row.miles||0),0),tripFunding};
   },[wallet,mileBalances,goal,rewardRules]);
 
