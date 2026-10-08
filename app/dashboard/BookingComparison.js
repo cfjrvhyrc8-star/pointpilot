@@ -2,6 +2,7 @@
 import {useState} from "react";
 import {buildBookingDecision,bookingFeeTotals,flightRouteStatus} from "../../lib/booking-decision.js";
 import PersonalValue from "./PersonalValue.js";
+import BookingChecklist from "./BookingChecklist.js";
 
 const fmt=value=>Number(value||0).toLocaleString("en-IN",{maximumFractionDigits:2});
 export default function BookingComparison({cashFare,taxes,award,direct}){
@@ -30,6 +31,7 @@ export default function BookingComparison({cashFare,taxes,award,direct}){
   </div><p className="bookingNote">Compare the cash you retain with the points you give up. A lower cash payment does not automatically mean better value. These options are alternatives: the same points cannot fund two options at once.</p>
   {excluded.length>0&&<details className="personalValue"><summary>{excluded.length} routes excluded from this flight comparison</summary><p>Only routes whose loaded terms identify flight use enter this comparison. This does not confirm eligibility for your specific flight.</p><ul>{excluded.map((item,index)=><li key={index}>{item.card.card_name} · {item.rule.partner}: {({hotel_only:"hotel-only route",statement_credit:"statement credit—not a reduction in checkout cash",unverified:"not verified or inactive",unsupported:"not a direct flight redemption",needs_verification:"flight eligibility needs verification"})[flightRouteStatus(item.rule)]}.</li>)}</ul></details>}
   <PersonalValue decision={decision} direct={route} award={award}/>
+  <BookingChecklist key={JSON.stringify([cashFare,taxes,route,award,extraFees])} hasTransfers={transfers.length>0}/>
   </>}
  </section>;
 }
