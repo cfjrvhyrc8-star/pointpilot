@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import {buildBookingDecision,buildPersonalValue} from '../lib/booking-decision.js';
-const base={cashFare:100000,taxes:10000,award:{target:50000,shortfall:0,routes:[]},direct:{rule:{route_status:'verified'},cashRemaining:30000,pointsUsed:70000}};
+import {buildBookingDecision,buildPersonalValue,flightRouteStatus} from '../lib/booking-decision.js';
+const base={cashFare:100000,taxes:10000,award:{target:50000,shortfall:0,routes:[]},direct:{rule:{route_status:'verified',partner_type:'direct_travel',partner:'Flight portal'},cashRemaining:30000,pointsUsed:70000}};
 assert.equal(buildBookingDecision(base).lowest.kind,'award');
 assert.equal(buildBookingDecision(base).awardValue,1.8);
 assert.equal(buildBookingDecision({...base,award:{...base.award,shortfall:1}}).lowest.kind,'direct');
@@ -41,3 +41,15 @@ assert.equal(feePersonal.rows.find(row=>row.kind==='award').total,66000);
 assert.equal(feePersonal.best.kind,'direct');
 assert.equal(buildBookingDecision({...base,extraFees:{cash:0.25}}).choices.find(row=>row.kind==='cash').cash,100000.25);
 console.log('Fee comparison: 13 assertions passed, including ranking changes and invalid input.');
+
+const rule={route_status:'verified',partner_type:'voucher'};
+assert.equal(flightRouteStatus({...rule,partner:'Taj Hotels and Resorts'}),'hotel_only');
+assert.equal(flightRouteStatus({...rule,partner:'The Postcard Hotels'}),'hotel_only');
+assert.equal(flightRouteStatus({...rule,partner:'Air India'}),'flight_candidate');
+assert.equal(flightRouteStatus({...rule,partner:'Store voucher'}),'needs_verification');
+assert.equal(flightRouteStatus({...rule,partner_type:'statement_credit'}),'statement_credit');
+assert.equal(flightRouteStatus({...rule,partner:'Flights and hotels',active:false}),'unverified');
+assert.equal(flightRouteStatus({...rule,partner:'Flights and hotels'}),'flight_candidate');
+assert.equal(flightRouteStatus({...rule,notes:'Excludes flights'}),'needs_verification');
+assert.equal(buildBookingDecision({...base,award:{target:0,routes:[],shortfall:0},direct:{...base.direct,rule:{...rule,partner:'Taj'}}}).lowest.kind,'cash');
+console.log('Flight eligibility: 9 checks passed.');
