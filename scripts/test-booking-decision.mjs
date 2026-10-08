@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {buildBookingDecision} from '../lib/booking-decision.js';
+const base={cashFare:100000,taxes:10000,award:{target:50000,shortfall:0,routes:[]},direct:{rule:{route_status:'verified'},cashRemaining:30000,pointsUsed:70000}};
+assert.equal(buildBookingDecision(base).lowest.kind,'award');
+assert.equal(buildBookingDecision(base).awardValue,1.8);
+assert.equal(buildBookingDecision({...base,award:{...base.award,shortfall:1}}).lowest.kind,'direct');
+assert.equal(buildBookingDecision({...base,award:{...base.award,routes:[{contribution:1,rule:{route_status:'draft'}}]}}).reason,'verification');
+assert.equal(buildBookingDecision({...base,taxes:120000,direct:null}).lowest.kind,'cash');
+assert.equal(buildBookingDecision({...base,taxes:100000,direct:null}).lowest.kind,'cash');
+assert.equal(buildBookingDecision({...base,cashFare:0}),null);
+assert.equal(buildBookingDecision({...base,taxes:-1}),null);
+assert.equal(buildBookingDecision({...base,award:{target:0,routes:[],shortfall:0},direct:null}).lowest.kind,'cash');
+assert.equal(buildBookingDecision({...base,award:{...base.award,routes:[{contribution:1,rule:{route_status:'verified',active:false}}]}}).awardEligible,false);
+console.log('Booking decision: 9 scenarios passed.');
