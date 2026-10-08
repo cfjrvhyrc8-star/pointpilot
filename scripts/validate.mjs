@@ -2,7 +2,7 @@ import fs from "node:fs";
 import {createRequire} from "node:module";
 import {TOP_CARDS,rankForSpend} from "../lib/card-catalog.js";
 import {AIRLINE_PROGRAMS} from "../lib/airline-programs.js";
-import {buildAwardFunding,buildDirectRedemptions,buildGoalPace} from "../lib/reward-planner.js";
+import {buildAwardFunding,buildDirectRedemptions,buildGoalPace,cardMatchesRewardRule,transferRatioText} from "../lib/reward-planner.js";
 const require=createRequire(import.meta.url);
 const parser=require("next/dist/compiled/babel/parser");
 
@@ -22,4 +22,9 @@ const award=buildAwardFunding({wallet:sampleWallet,rules:sampleRules,balances:[{
 if(award.shortfall!==0||award.plannedTransfer!==40000||award.valuePerMile!==1.6)throw new Error("Award funding plan is incorrect.");
 const pace=buildGoalPace({travelDate:"2027-04-05",shortfall:30000,transferRatio:1,asOf:new Date("2027-01-05T12:00:00Z").getTime()});
 if(pace.monthsRemaining!==3||pace.milesPerMonth!==10000||pace.pointsPerMonth!==10000||pace.status!=="building")throw new Error("Trip funding pace is incorrect.");
+const duplicate=buildAwardFunding({wallet:sampleWallet,rules:[...sampleRules,sampleRules[1]],balances:[],programCode:"air-india-maharaja",milesRequired:100000});
+if(duplicate.plannedTransfer!==75000||duplicate.shortfall!==25000)throw new Error("Duplicate routes must not create additional points.");
+const voucher=buildDirectRedemptions([{card_name:"Platinum Travel",points:40000}],[{card_name:"Platinum Travel",partner_type:"voucher",redemption_value:.3,min_redeem_points:20000,redeem_increment:20000}],1000)[0];
+if(voucher.pointsUsed!==20000||voucher.value!==1000||voucher.rate!==.05)throw new Error("Voucher blocks must preserve actual points consumed and effective value.");
+if(cardMatchesRewardRule("",sampleRules[0])||transferRatioText(.1)!=="1:10")throw new Error("Empty card matching or transfer display is incorrect.");
 console.log(`Validated ${files.length} modules, ${TOP_CARDS.length} cards, ${AIRLINE_PROGRAMS.length} airline programmes, 6 spend scenarios and the redemption planner.`);
