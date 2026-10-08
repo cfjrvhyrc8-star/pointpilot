@@ -1,0 +1,13 @@
+import assert from "node:assert/strict";
+import {fundingStatus} from "../lib/funding-status.js";
+const base={target:100,shortfall:0,routes:[]};
+assert.equal(fundingStatus(base).covered,true);
+assert.equal(fundingStatus({...base,target:0}).covered,false);
+assert.equal(fundingStatus({...base,shortfall:1}).covered,false);
+const route={contribution:10,limitsStatus:"needs_verification",rule:{active:true,verified:true}};
+assert.equal(fundingStatus({...base,routes:[route]}).covered,false);
+assert.equal(fundingStatus({...base,routes:[route]}).coverageLabel,"ratio-only coverage");
+assert.equal(fundingStatus({...base,routes:[{...route,contribution:0}]}).covered,true);
+assert.equal(fundingStatus({...base,routes:[{...route,limitsStatus:"verified"}]}).covered,true);
+assert.equal(fundingStatus({...base,routes:[{...route,limitsStatus:"verified",rule:{active:false,verified:true}}]}).covered,false);
+console.log("Funding status: 8 checks passed.");
