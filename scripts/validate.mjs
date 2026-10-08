@@ -6,7 +6,7 @@ import {buildAwardFunding,buildDirectRedemptions,buildGoalPace,cardMatchesReward
 const require=createRequire(import.meta.url);
 const parser=require("next/dist/compiled/babel/parser");
 
-const files=["app/page.js","app/login/page.js","app/cards/page.js","app/pricing/page.js","app/dashboard/page.js","app/dashboard/ActionCentre.js","app/dashboard/SpendSmart.js","app/dashboard/BestUseSection.js","app/dashboard/AirlineMiles.js","app/dashboard/TripGoal.js","app/api/optimize/route.js","lib/card-catalog.js","lib/airline-programs.js","lib/reward-planner.js","lib/travel-provider.js"];
+const files=["app/page.js","app/login/page.js","app/cards/page.js","app/pricing/page.js","app/dashboard/page.js","app/dashboard/ActionCentre.js","app/dashboard/SpendSmart.js","app/dashboard/BestUseSection.js","app/dashboard/AirlineMiles.js","app/dashboard/TripGoal.js","app/dashboard/BookingComparison.js","app/api/optimize/route.js","lib/card-catalog.js","lib/airline-programs.js","lib/reward-planner.js","lib/travel-provider.js"];
 for(const file of files)parser.parse(fs.readFileSync(file,"utf8"),{sourceType:"module",plugins:["jsx"]});
 if(TOP_CARDS.length!==30||new Set(TOP_CARDS.map(x=>`${x.issuer}|${x.name}`)).size!==30)throw new Error("The India catalogue must contain 30 unique cards.");
 if(AIRLINE_PROGRAMS.length!==12||new Set(AIRLINE_PROGRAMS.map(x=>x.code)).size!==12||AIRLINE_PROGRAMS.some(x=>!x.source_url||!x.award_search_url))throw new Error("The airline programme directory must contain 12 sourced programmes.");

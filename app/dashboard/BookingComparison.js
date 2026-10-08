@@ -1,0 +1,23 @@
+"use client";
+import {useState} from "react";
+
+const fmt=value=>Number(value||0).toLocaleString("en-IN",{maximumFractionDigits:0});
+export default function BookingComparison({cashFare,taxes,award,direct}){
+ const [selected,setSelected]=useState("");
+ const options=direct.filter(item=>item.rule.route_status==="verified"&&item.rule.active!==false);
+ const route=options.find(item=>(item.card.id||item.card.card_name)+"|"+(item.rule.id||item.rule.partner)===selected)||options[0];
+ const cash=Number(cashFare),fees=Number(taxes);
+ const valid=Number.isFinite(cash)&&cash>0&&Number.isFinite(fees)&&fees>=0;
+ const funded=award.target>0&&award.shortfall===0;
+ const transfers=award.routes.filter(item=>item.contribution>0);
+ return <section className="bookingCompare" aria-label="Compare ways to book">
+  <div className="sectionHead"><div><span className="sectionKicker">COMPARE WAYS TO BOOK</span><h3>One trip. Three ways to pay.</h3><p>Use quotes for the same flights, cabin and travellers. Values below are estimates from your inputs, not booking offers.</p></div></div>
+  {!valid?<div className="notice">Enter a positive cash fare and non-negative award taxes to compare options.</div>:<>
+  <div className="bookingOptions">
+   <article><small>CASH</small><h4>Keep your points</h4><strong>₹{fmt(cash)}</strong><span>Cash payable · entered fare</span><dl><dt>Points used</dt><dd>None</dd><dt>Points retained</dt><dd>All balances</dd></dl><p>Check baggage, cancellation terms and the final checkout total. Future points earned are excluded.</p></article>
+   <article><small>DIRECT CARD REDEMPTION</small><h4>Use a card redemption route</h4>{route?<><label>Compare route<select value={(route.card.id||route.card.card_name)+"|"+(route.rule.id||route.rule.partner)} onChange={e=>setSelected(e.target.value)}>{options.map((item,index)=><option key={index} value={(item.card.id||item.card.card_name)+"|"+(item.rule.id||item.rule.partner)}>{item.card.card_name} · {item.rule.partner}</option>)}</select></label><strong>₹{fmt(route.cashRemaining)}</strong><span>Estimated cash payable before extra portal fees</span><dl><dt>Card points used</dt><dd>{fmt(route.pointsUsed)} · {route.card.card_name}</dd><dt>Fare offset</dt><dd>₹{fmt(route.value)}</dd><dt>Effective value</dt><dd>₹{route.rate.toFixed(2)}/point</dd></dl><p>{route.rule.notes||"Issuer eligibility, redemption caps and booking conditions apply."} Confirm this route covers your selected airline and fare. Portal prices may differ from the cash quote; voucher residual value is excluded.</p>{route.rule.source_url&&<a href={route.rule.source_url} target="_blank" rel="noreferrer">Check issuer terms ↗</a>}</>:<p>No verified fixed-value route matches this wallet. Add a supported card or compare cash with an airline award.</p>}</article>
+   <article><small>AIRLINE AWARD</small><h4>{award.program.name}</h4><strong>{award.target>0?"₹"+fmt(fees):"Quote needed"}</strong><span>{funded?"Cash payable if the quoted award is available":"Quoted taxes only · funding incomplete"}</span><dl><dt>Airline miles redeemed</dt><dd>{fmt(award.target)}</dd><dt>Existing miles used</dt><dd>{fmt(Math.min(award.existing,award.target))}</dd><dt>Miles still needed</dt><dd>{fmt(award.shortfall)}</dd></dl>{transfers.map((item,index)=><p key={index}>Transfer {fmt(item.pointsNeeded)} {item.card.card_name} points → {fmt(item.contribution)} miles.</p>)}<p>{!funded?"The missing miles are not priced here; this is not a fully funded booking option. ":"Funding is modeled, not a seat confirmation. "}Confirm award space, total taxes, transfer minimums, increments and timing. Transfers may be irreversible; cancellation rules differ.</p><a href={award.program.award_search_url} target="_blank" rel="noreferrer">Check airline award quote ↗</a></article>
+  </div><p className="bookingNote">Compare the cash you retain with the points you give up. A lower cash payment does not automatically mean better value. These options are alternatives: the same points cannot fund two options at once.</p>
+  </>}
+ </section>;
+}
