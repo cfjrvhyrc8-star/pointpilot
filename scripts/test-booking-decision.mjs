@@ -13,7 +13,7 @@ assert.equal(buildBookingDecision({...base,award:{target:0,routes:[],shortfall:0
 assert.equal(buildBookingDecision({...base,award:{...base.award,routes:[{contribution:1,rule:{route_status:'verified',active:false}}]}}).awardEligible,false);
 console.log('Booking decision: 9 scenarios passed.');
 const card={id:'one',card_name:'Test card'};
-const personalAward={...base.award,program:{code:'test',name:'Test miles'},existing:10000,routes:[{card,pointsNeeded:80000,contribution:40000,rule:{route_status:'verified'}}]};
+const personalAward={...base.award,program:{code:'test',name:'Test miles'},existing:10000,routes:[{card,pointsNeeded:80000,contribution:40000,limitsStatus:'verified',rule:{route_status:'verified'}}]};
 const personalDirect={...base.direct,card};
 const decision=buildBookingDecision({...base,direct:personalDirect,award:personalAward});
 const calc=values=>buildPersonalValue({decision,direct:personalDirect,award:personalAward,values});
@@ -53,3 +53,4 @@ assert.equal(flightRouteStatus({...rule,partner:'Flights and hotels'}),'flight_c
 assert.equal(flightRouteStatus({...rule,notes:'Excludes flights'}),'needs_verification');
 assert.equal(buildBookingDecision({...base,award:{target:0,routes:[],shortfall:0},direct:{...base.direct,rule:{...rule,partner:'Taj'}}}).lowest.kind,'cash');
 console.log('Flight eligibility: 9 checks passed.');
+assert.equal(buildBookingDecision({...base,award:{...personalAward,routes:personalAward.routes.map(route=>({...route,limitsStatus:'needs_verification'}))}}).awardEligible,false);

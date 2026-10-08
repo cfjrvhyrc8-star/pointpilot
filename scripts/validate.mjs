@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import "./test-transfer-limits.mjs";
 import "./test-booking-decision.mjs";
 import {createRequire} from "node:module";
 import {TOP_CARDS,rankForSpend} from "../lib/card-catalog.js";

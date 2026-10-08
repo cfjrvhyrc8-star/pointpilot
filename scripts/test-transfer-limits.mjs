@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {planTransfer} from '../lib/transfer-limits.js';
+const rule={transfer_unit:'card_points',transfer_limits_verified:true,min_transfer:1000,transfer_increment:500,max_transfer:5000};
+const calc=overrides=>planTransfer({balance:10000,ratio:2,milesNeeded:600,rule,...overrides});
+assert.deepEqual(calc(),{transferable:2500,pointsNeeded:1500,milesReceived:750,contribution:600,surplusMiles:150,limitsStatus:'verified'});
+assert.equal(calc({balance:999}).pointsNeeded,0);
+assert.equal(calc({milesNeeded:100}).pointsNeeded,1000);
+assert.equal(calc({milesNeeded:9000}).contribution,2500);
+assert.equal(calc({milesNeeded:0}).pointsNeeded,0);
+assert.equal(calc({rule:{...rule,min_transfer:1200},balance:1499}).pointsNeeded,0);
+assert.equal(calc({rule:{...rule,max_transfer:0}}).pointsNeeded,0);
+assert.equal(calc({rule:{...rule,transfer_increment:0}}).limitsStatus,'invalid');
+assert.equal(calc({rule:{min_transfer:1000}}).limitsStatus,'needs_verification');
+assert.equal(calc({rule:{...rule,max_transfer:null},milesNeeded:9000}).pointsNeeded,10000);
+assert.equal(calc({ratio:0.1,milesNeeded:10}).milesReceived,10000);
+assert.equal(calc({ratio:Infinity}).limitsStatus,'invalid');
+console.log('Transfer limits: 12 checks passed.');
