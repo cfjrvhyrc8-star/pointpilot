@@ -1,0 +1,13 @@
+import assert from "node:assert/strict";
+import {bestFlightRedemption} from "../lib/booking-decision.js";
+const route=(partner,value,cashRemaining,extra={})=>({pointsUsed:100,value,cashRemaining,rule:{partner,partner_type:"voucher",route_status:"verified",active:true,...extra}});
+const hotel=route("Taj Hotels",10000,0),flight=route("Air India",6000,4000);
+assert.equal(bestFlightRedemption([hotel,flight]),flight);
+assert.equal(bestFlightRedemption([hotel]),null);
+assert.equal(bestFlightRedemption([route("Statement credit",10000,0,{partner_type:"statement_credit"})]),null);
+assert.equal(bestFlightRedemption([route("Air India",10000,0,{route_status:"pending"})]),null);
+assert.equal(bestFlightRedemption([route("Air India",NaN,0)]),null);
+const cheaper=route("Flight portal",7000,3000,{partner_type:"direct_travel"});
+assert.equal(bestFlightRedemption([flight,cheaper]),cheaper);
+assert.equal(bestFlightRedemption([]),null);
+console.log("Flight benchmark: 7 checks passed.");

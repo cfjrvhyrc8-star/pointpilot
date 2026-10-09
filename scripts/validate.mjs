@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import "./test-transfer-limits.mjs";
+import "./test-flight-benchmark.mjs";
 import "./test-funding-status.mjs";
 import "./test-booking-checklist.mjs";
 import "./test-booking-decision.mjs";
