@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {diningEstimate} from '../lib/dining-estimate.js';
+const input={amount:15000,date:'2026-10-10',mcc:'5812',confirmed:true,bonusUsed:'0'};
+const calc=change=>diningEstimate({...input,...change});
+assert.equal(calc().totalPoints,1000);
+assert.equal(calc({amount:149}).totalPoints,0);
+assert.equal(calc({amount:150}).totalPoints,10);
+assert.equal(calc({amount:60000}).totalPoints,3000);
+assert.equal(calc({bonusUsed:900}).bonusPoints,100);
+assert.equal(calc({bonusUsed:1000}).bonusPoints,0);
+for(const change of [{bonusUsed:''},{bonusUsed:-1},{bonusUsed:Infinity},{bonusUsed:1.5},{confirmed:false},{date:'2026-10-09'},{date:'2026-02-30'},{mcc:'0000'}])assert.equal(calc(change).bonusPoints,0);
+assert.equal(calc({amount:Infinity}),null);
+assert.equal(calc({amount:-1}),null);
+console.log('Dining estimates: 16 checks passed.');

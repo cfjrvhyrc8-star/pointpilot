@@ -2,6 +2,7 @@
 
 import {useEffect,useMemo,useState} from "react";
 import {getSupabase} from "../../lib/supabase-browser.js";
+import {diningEstimate} from "../../lib/dining-estimate.js";
 
 const categories=[
   ["general","Everyday spend"],
@@ -50,6 +51,8 @@ export default function SpendSmart({wallet}){
   const [amount,setAmount]=useState(10000);
   const [category,setCategory]=useState("general");
   const [merchant,setMerchant]=useState("");
+  const [dining,setDining]=useState({date:"",mcc:"",confirmed:false,bonusUsed:""});
+  const diningScenario=diningEstimate({amount,...dining});
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState("");
 
@@ -116,6 +119,19 @@ export default function SpendSmart({wallet}){
         </label>
         <div className="spendChips">{merchantIdeas.map(([label,value])=><button className={merchant===label?"active":""} onClick={()=>applyMerchant(label,value)} key={label}>{label}</button>)}</div>
       </div>
+
+      {category==="dining"&&wallet.some(card=>/diners.*black.*metal/i.test(card.card_name))&&<details className="spendState">
+        <summary>Explore HDFC Diners Black Metal weekend dining</summary>
+        <p>Separate scenario only—not included in the ranking or monthly plan. Merchant names do not establish eligibility.</p>
+        <div className="spendControls">
+          <label>Purchase date<input type="date" value={dining.date} onChange={e=>setDining({...dining,date:e.target.value})}/></label>
+          <label>Confirmed merchant category code<select value={dining.mcc} onChange={e=>setDining({...dining,mcc:e.target.value})}><option value="">Unknown</option>{['5812','5813','5814'].map(code=><option key={code}>{code}</option>)}<option value="other">Other</option></select></label>
+          <label>Dining bonus points already used that day<input type="number" min="0" step="1" placeholder="Unknown" value={dining.bonusUsed} onChange={e=>setDining({...dining,bonusUsed:e.target.value})}/></label>
+          <label><input type="checkbox" checked={dining.confirmed} onChange={e=>setDining({...dining,confirmed:e.target.checked})}/>I confirm a standalone restaurant, direct card payment, no EMI/wallet payment and no other promotion.</label>
+        </div>
+        {diningScenario?<p><b>{diningScenario.basePoints} base + {diningScenario.bonusPoints} bonus = {diningScenario.totalPoints} estimated points.</b> {diningScenario.eligible?'Conditional on your entries; bonus limited to remaining allowance within the 1,000-point daily cap.':'Bonus excluded until weekend, merchant, payment and prior usage are confirmed.'} Base assumes otherwise eligible spend; remaining statement/category caps are not checked. Each purchase is modeled separately in ₹150 blocks. Points are not cashback.</p>:<p>Enter a valid purchase amount.</p>}
+        <a href="https://v.hdfc.bank.in/htdocs/amp/personal/pay/cards/credit-cards/diners-club-black-metal-edition.html" target="_blank" rel="noreferrer">Check issuer terms before paying ↗</a>
+      </details>}
 
       {loading?<div className="spendState">Loading verified spend rules…</div>:error?<div className="errorBox">We couldn’t load spend intelligence: {error}</div>:leader?<div className="spendResults">
         <article className="spendWinner">
