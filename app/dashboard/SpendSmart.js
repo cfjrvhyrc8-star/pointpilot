@@ -3,6 +3,7 @@
 import {useEffect,useMemo,useState} from "react";
 import {getSupabase} from "../../lib/supabase-browser.js";
 import {diningEstimate} from "../../lib/dining-estimate.js";
+import {selectSpendRule,spendValue} from "../../lib/spend-estimate.js";
 
 const categories=[
   ["general","Everyday spend"],
@@ -72,14 +73,9 @@ export default function SpendSmart({wallet}){
   const ranked=useMemo(()=>{
     const spend=Math.max(0,Number(amount)||0);
     return wallet.map(card=>{
-      const cardRules=rules.filter(rule=>cardMatches(card.card_name,rule.card_name));
-      const exact=cardRules.filter(rule=>rule.category===category);
-      const fallback=cardRules.filter(rule=>rule.category==="general");
-      const candidates=exact.length?exact:fallback;
-      const best=candidates.sort((a,b)=>Number(b.value_rate_percent||0)-Number(a.value_rate_percent||0))[0];
+      const best=selectSpendRule(card.card_name,category,rules,spend);
       if(!best||best.value_rate_percent==null)return{card,ranked:false};
-      const eligibleSpend=best.cap_amount==null?spend:Math.min(spend,Number(best.cap_amount));
-      const value=eligibleSpend*Number(best.value_rate_percent)/100;
+      const {eligibleSpend,value}=spendValue(best,spend);
       return{card,ranked:true,rule:best,value,rate:Number(best.value_rate_percent),eligibleSpend,unrewardedSpend:Math.max(0,spend-eligibleSpend),isFallback:best.category!==category};
     }).sort((a,b)=>{
       if(a.ranked!==b.ranked)return a.ranked?-1:1;

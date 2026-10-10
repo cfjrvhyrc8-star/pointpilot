@@ -2,6 +2,7 @@
 
 import {useEffect,useMemo,useState} from "react";
 import {getSupabase} from "../../lib/supabase-browser.js";
+import {selectSpendRule,spendValue} from "../../lib/spend-estimate.js";
 const categories=[
  {key:"general",label:"Everyday & shopping",icon:"◎",hint:"Retail, groceries and other eligible spend"},
  {key:"dining",label:"Dining & delivery",icon:"◒",hint:"Restaurants and eligible food delivery"},
@@ -16,17 +17,8 @@ const fmt=value=>Number(value||0).toLocaleString("en-IN");
 const money=value=>Number(value||0).toLocaleString("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0});
 const clean=value=>String(value||"").toLowerCase().replace(/credit card|metal edition|metal card|card|club|first|hdfc|icici|idfc|bank|american express india|scapia federal|federal/g,"").replace(/[^a-z0-9]/g,"");
 const matches=(cardName,ruleName)=>{const a=clean(cardName),b=clean(ruleName);return Boolean(a&&b&&(a.includes(b)||b.includes(a)))};
-const bestRule=(cardName,category,rules)=>{
- const cardRules=rules.filter(rule=>matches(cardName,rule.card_name));
- const candidates=cardRules.filter(rule=>rule.category===category);
- const usable=candidates.length?candidates:cardRules.filter(rule=>rule.category==="general");
- return [...usable].sort((a,b)=>Number(b.value_rate_percent||0)-Number(a.value_rate_percent||0))[0];
-};
-const valueFor=(rule,spend)=>{
- if(!rule||rule.value_rate_percent==null)return 0;
- const eligible=rule.cap_amount==null?spend:Math.min(spend,Number(rule.cap_amount));
- return eligible*Number(rule.value_rate_percent)/100;
-};
+const bestRule=selectSpendRule;
+const valueFor=(rule,spend)=>spendValue(rule,spend)?.value||0;
 
 export default function MonthlyRewardPlan({wallet,userId}){
  const[spend,setSpend]=useState(emptySpend),[rules,setRules]=useState([]),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[saved,setSaved]=useState(false),[error,setError]=useState("");
@@ -34,11 +26,11 @@ export default function MonthlyRewardPlan({wallet,userId}){
  const model=useMemo(()=>{
   const plans=categories.map(category=>{
    const amount=Math.max(0,Number(spend[category.key])||0);
-   const ranked=wallet.map(card=>{const rule=bestRule(card.card_name,category.key,rules);return{card,rule,value:valueFor(rule,amount)}}).filter(row=>row.rule).sort((a,b)=>b.value-a.value);
+   const ranked=wallet.map(card=>{const rule=bestRule(card.card_name,category.key,rules,amount);return{card,rule,value:valueFor(rule,amount)}}).filter(row=>row.rule).sort((a,b)=>b.value-a.value);
    return{...category,amount,winner:ranked[0]||null,ranked};
   });
   const optimized=plans.reduce((sum,row)=>sum+Number(row.winner?.value||0),0);
-  const singleCards=wallet.map(card=>({card,value:plans.reduce((sum,row)=>sum+valueFor(bestRule(card.card_name,row.key,rules),row.amount),0)})).sort((a,b)=>b.value-a.value);
+  const singleCards=wallet.map(card=>({card,value:plans.reduce((sum,row)=>sum+valueFor(bestRule(card.card_name,row.key,rules,row.amount),row.amount),0)})).sort((a,b)=>b.value-a.value);
   const baseline=singleCards[0]||null;
   const monthlySpend=plans.reduce((sum,row)=>sum+row.amount,0);
   const coveredSpend=plans.reduce((sum,row)=>sum+(row.winner?row.amount:0),0);
