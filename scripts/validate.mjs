@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import "./test-plan-export.mjs";
 import "./test-monthly-plan.mjs";
 import "./test-spend-estimate.mjs";
 import "./test-dining-estimate.mjs";

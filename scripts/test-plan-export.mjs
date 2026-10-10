@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {csvCell,monthlyPlanCsv} from '../lib/plan-export.js';
+import {buildMonthlyPlan} from '../lib/monthly-plan.js';
+assert.equal(csvCell('a,"b"'),'"a,""b"""');
+for(const input of ['=SUM(A1)', '+cmd', '-cmd', '@SUM(A1)', '\t=1'])assert.ok(csvCell(input).startsWith('"\''));
+const model=buildMonthlyPlan({wallet:[{card_name:'Alpha',user_id:'PRIVATE-ID'}],rules:[{card_name:'Alpha',category:'general',channel:'any',value_rate_percent:1,cap_amount:100,source_url:'https://example.com',reward_label:'Base'}],spend:{general:1000},categories:[{key:'general',label:'Shopping'}]});
+const csv=monthlyPlanCsv(model,new Date('2026-10-10T00:00:00Z'));
+assert.ok(csv.startsWith('\uFEFF'));
+assert.ok(csv.includes('"900.00"'));
+assert.ok(csv.includes('https://example.com'));
+assert.ok(!csv.includes('PRIVATE-ID'));
+assert.ok(csv.includes('unsaved edits'));
+assert.ok(csv.includes('2026-10-10T00:00:00.000Z'));
+assert.ok(monthlyPlanCsv({...model,baseline:null,annualIncremental:null}).includes('Not comparable'));
+console.log('Plan export: 13 checks passed.');
