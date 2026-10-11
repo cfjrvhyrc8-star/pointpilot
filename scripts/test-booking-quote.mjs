@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {repriceDirectRoute,directBreakEven} from '../lib/booking-quote.js';
+import {repriceDirectRoute,directBreakEven,validRedemptionAllowance} from '../lib/booking-quote.js';
 import {buildBookingDecision} from '../lib/booking-decision.js';
 const original={card:{card_name:'Diners Black Metal',points:75000},rule:{card_name:'Diners Black Metal',partner:'Flight portal',partner_type:'direct_travel',route_status:'verified',redemption_value:1,max_booking_coverage:0.7}};
 const before=JSON.stringify(original);
@@ -23,3 +23,21 @@ const voucher={card:{card_name:'Test',points:40000},rule:{card_name:'Test',partn
 assert.equal(repriceDirectRoute(voucher,1000).pointsUsed,20000);
 assert.equal(repriceDirectRoute(voucher,1000).cashRemaining,0);
 console.log('Booking quotes: 22 checks passed.');
+const limited=repriceDirectRoute(original,100000,25000);
+assert.equal(limited.pointsUsed,25000);
+assert.equal(limited.cashRemaining,75000);
+assert.equal(limited.card,original.card);
+assert.equal(repriceDirectRoute(original,100000,0),null);
+assert.equal(repriceDirectRoute(original,100000,999999).pointsUsed,70000);
+const capped={...original,rule:{...original.rule,max_redeem_points:10000}};
+assert.equal(repriceDirectRoute(capped,100000,25000).pointsUsed,10000);
+assert.equal(repriceDirectRoute(voucher,1000,19000),null);
+assert.equal(repriceDirectRoute(voucher,1000,20000).pointsUsed,20000);
+for(const invalid of ['', ' ',null,-1,0.5,Infinity,false,'abc']){
+ assert.equal(validRedemptionAllowance(invalid),false);
+ assert.equal(repriceDirectRoute(original,100000,invalid),null);
+}
+assert.equal(validRedemptionAllowance('0'),true);
+assert.equal(JSON.stringify(original),before);
+assert.equal(compare(repriceDirectRoute(original,100000,0)).lowest.kind,'cash');
+console.log('Remaining redemption allowance: 27 checks passed.');
