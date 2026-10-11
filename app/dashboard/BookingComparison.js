@@ -21,10 +21,10 @@ export default function BookingComparison({cashFare,taxes,award,direct}){
  const extraFees=feeScenarios[feeKey]||{cash:0,direct:0,award:0,transfer:0};
  const extras=bookingFeeTotals(extraFees);
  const cash=Number(cashFare),fees=Number(taxes);
- const valid=Boolean(extras)&&(!portal.enabled||Boolean(route))&&Number.isFinite(cash)&&cash>0&&Number.isFinite(fees)&&fees>=0;
  const funded=award.target>0&&award.shortfall===0;
  const transfers=award.routes.filter(item=>item.contribution>0);
  const decision=buildBookingDecision({cashFare,taxes,award,direct:route,extraFees});
+ const valid=Boolean(decision)&&(!portal.enabled||Boolean(route));
  const breakEven=directBreakEven(decision);
  return <section className="bookingCompare" aria-label="Compare ways to book">
   <div className="sectionHead"><div><span className="sectionKicker">COMPARE WAYS TO BOOK</span><h3>One trip. Three ways to pay.</h3><p>Use quotes for the same flights, cabin and travellers. Values below are estimates from your inputs, not booking offers.</p></div></div>

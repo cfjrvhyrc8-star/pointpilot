@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import {buildBookingDecision,buildPersonalValue,flightRouteStatus} from '../lib/booking-decision.js';
 const base={cashFare:100000,taxes:10000,award:{target:50000,shortfall:0,routes:[]},direct:{rule:{route_status:'verified',partner_type:'direct_travel',partner:'Flight portal'},cashRemaining:30000,pointsUsed:70000}};
+for(const field of ['cashFare','taxes'])for(const invalid of ['', ' ', null,undefined,false,true])assert.equal(buildBookingDecision({...base,[field]:invalid}),null);
+assert.equal(buildBookingDecision({...base,taxes:0}).choices.find(row=>row.kind==='award').cash,0);
+assert.equal(buildBookingDecision({...base,taxes:'0'}).choices.find(row=>row.kind==='award').cash,0);
+assert.equal(buildBookingDecision({...base,award:{...base.award,target:Infinity}}).awardEligible,false);
+console.log('Quote completeness: 15 checks passed.');
 assert.equal(buildBookingDecision(base).lowest.kind,'award');
 assert.equal(buildBookingDecision(base).awardValue,1.8);
 assert.equal(buildBookingDecision({...base,award:{...base.award,shortfall:1}}).lowest.kind,'direct');
