@@ -9,6 +9,7 @@ import "./test-funding-status.mjs";
 import "./test-booking-checklist.mjs";
 import "./test-booking-decision.mjs";
 import "./test-booking-quote.mjs";
+import "./test-booking-summary.mjs";
 import {createRequire} from "node:module";
 import {TOP_CARDS,rankForSpend} from "../lib/card-catalog.js";
 import {AIRLINE_PROGRAMS} from "../lib/airline-programs.js";
