@@ -21,4 +21,11 @@ assert.equal(plan.baseline.card.card_name,'Alpha');
 plan=run([],{general:1000});
 assert.equal(plan.unmodeledSpend,1000);
 assert.equal(plan.annualIncremental,null);
-console.log('Monthly plan: 12 checks passed.');
+plan=run([
+ {...base,card_name:'Platinum Travel',value_rate_percent:0.6},
+ {...base,card_name:'Times Black',value_rate_percent:2},
+],{general:10000},[{card_name:'Amex Platinum Travel'},{card_name:'ICICI Times Black Metal'}]);
+assert.equal(plan.coveredSpend,10000);
+assert.equal(plan.optimized,200);
+assert.equal(plan.baseline.card.card_name,'ICICI Times Black Metal');
+console.log('Monthly plan: 15 checks passed.');

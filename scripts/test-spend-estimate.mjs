@@ -20,4 +20,16 @@ assert.equal(pick([base,capped],'general',10000),base);
 assert.equal(spendValue(capped,1000).value,10);
 assert.equal(spendValue(capped,1000).unrewardedSpend,900);
 assert.equal(pick([base,{...base,category:'dining',value_rate_percent:null}]),base);
-console.log('Spend estimates: 20 checks passed.');
+for(const [wallet,rule] of [
+ ['Amex Platinum Travel','Platinum Travel'],
+ ['American Express Platinum Travel Credit Card','Amex Platinum Travel'],
+ ['ICICI Times Black Metal','Times Black'],
+ ['Scapia Federal Credit Card','Scapia'],
+]){
+ assert.equal(spendCardMatches(wallet,rule),true);
+ assert.equal(spendCardMatches(rule,wallet),true);
+ const r={...base,card_name:rule};
+ assert.equal(selectSpendRule(wallet,'general',[r],1000),r);
+}
+for(const [a,b] of [['Amex Platinum','Platinum Travel'],['Times Black','Diners Black'],['Scapia','Federal'],['Diners Black Metal','Diners Black']])assert.equal(spendCardMatches(a,b),false);
+console.log('Spend estimates: 36 checks passed.');
