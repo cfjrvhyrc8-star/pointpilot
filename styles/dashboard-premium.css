@@ -45,3 +45,17 @@
 .bookingCompare .valueTable{max-width:100%;overscroll-behavior-x:contain}.bookingCompare .valueTable table{min-width:460px}
 .bookingCompare .bookingDecision li{font-size:14px;line-height:1.65;margin:8px 0}.bookingCompare .bookingDecision ol{padding-left:22px}
 @media(max-width:600px){.bookingCompare{padding:12px;border-radius:18px}.bookingCompare .sectionHead h3{font-size:24px}.bookingCompare .personalValue,.bookingCompare .bookingDecision,.comparisonSetup{padding:14px}.bookingCompare .valueInputs{grid-template-columns:1fr}.bookingCompare .bookingOptions article{padding:16px}.bookingCompare .bookingOptions strong{font-size:30px}.bookingCompare .bookingOptions p,.bookingCompare .bookingOptions span,.bookingCompare .bookingNote{font-size:14px}.comparisonOptional{display:none}.bookingCompare .personalValue h4{font-size:18px}.bookingCompare .valueTable{padding-bottom:6px}}
+.mobileBookingCosts{display:none}
+.bookingCompare .valueTable:focus-visible{outline:3px solid #6650b5;outline-offset:3px}
+@media(max-width:600px){
+ .bookingCompare .desktopBookingCosts{display:none}
+ .mobileBookingCosts{display:grid;gap:12px;margin:18px 0}
+ .mobileBookingCosts article{min-width:0;border:1px solid #dedfeb;border-radius:14px;padding:14px;background:#fff;overflow-wrap:anywhere}
+ .mobileBookingCosts article.isLeading{border:2px solid #6650b5;background:#faf8ff}
+ .mobileBookingCosts h5{margin:0 0 8px;font-size:16px;color:#25243a}
+ .mobileBookingCosts .costLeader{display:inline-block;font-size:12px;font-weight:700;color:#50339a;background:#ebe6fa;padding:5px 8px;border-radius:8px}
+ .mobileBookingCosts dl{margin:12px 0 0}
+ .mobileBookingCosts dl>div{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 12px;padding:9px 0;font-size:14px;line-height:1.5}
+ .mobileBookingCosts dt{color:#596174}.mobileBookingCosts dd{margin:0;font-weight:700;color:#25243a;font-variant-numeric:tabular-nums}
+ .mobileBookingCosts .costTotal{border-top:1px solid #dedfeb;margin-top:4px;padding-top:12px}.mobileBookingCosts .costTotal dt{color:#25243a;font-weight:700}
+}
