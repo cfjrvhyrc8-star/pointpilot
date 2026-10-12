@@ -26,3 +26,22 @@
 .bookingDecision{padding:20px;margin:0 0 18px;border:1px solid #cbc5ed;border-left:4px solid #6650b5;border-radius:14px;background:#f0edfa;color:#25243a}.bookingDecision small{font-size:10px;letter-spacing:.08em;font-weight:800;color:#59439c}.bookingDecision h4{font-size:20px;margin:10px 0}.bookingDecision p{font-size:13px;line-height:1.65;margin:8px 0}
 .bookingCompare{margin:20px 0;padding:22px;border:1px solid #dfe2eb;border-radius:24px;background:#f8f9fc}.bookingOptions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.bookingOptions article{padding:20px;border:1px solid #dedfeb;border-radius:18px;background:white}.bookingOptions article>small{color:#6650b5;font-weight:800;font-size:11px}.bookingOptions h4{font-size:18px;margin:10px 0 18px}.bookingOptions strong{display:block;font-size:28px;margin-top:16px}.bookingOptions span,.bookingOptions p,.bookingNote{font-size:12px;line-height:1.6;color:#596174}.bookingOptions dl{font-size:12px}.bookingOptions dt{margin-top:12px;color:#596174}.bookingOptions dd{margin:4px 0;font-weight:700}.bookingOptions select{width:100%;padding:10px;margin-top:6px;border:1px solid #dfe2eb;border-radius:8px;background:#fff}.bookingOptions label{font-size:12px}.bookingOptions a{font-size:12px;color:#5741b9}.bookingNote{margin:16px 0 0}@media(max-width:900px){.bookingOptions{grid-template-columns:1fr}.bookingCompare{padding:16px}}
 .goalPace{margin-top:11px;padding:13px;border:1px solid #ffffff1c;border-radius:14px;background:#ffffff0b}.goalPace small,.goalPace b,.goalPace span{display:block}.goalPace small{color:#8fe9dc;font-size:7px;font-weight:950;letter-spacing:.11em}.goalPace b{margin-top:6px;font-size:9px;line-height:1.5}.goalPace span{margin-top:4px;color:#c8cede;font-size:8px;line-height:1.45}.goalPace+.goalNext{margin-top:11px}
+.comparisonAssumptions{padding:14px 18px;margin:0 0 14px;border:1px solid #dfe2eb;border-radius:12px;background:#fff;color:#394155}
+.comparisonAssumptions strong{font-size:13px}.comparisonAssumptions p{font-size:13px;line-height:1.6;margin:5px 0 0}
+.comparisonSetup{border:1px solid #d8d3e9;border-radius:16px;background:#fff;padding:16px;margin-bottom:20px}
+.comparisonSetup>summary{cursor:pointer;font-weight:750;line-height:1.5;min-height:44px;align-content:center}
+.comparisonOptional{font-size:12px;font-weight:500;color:#596174;margin-left:8px}
+.comparisonStep{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;border-radius:9px;margin-right:8px;background:#ebe6fa;color:#50339a;font-size:12px;font-weight:800;vertical-align:middle}
+.comparisonStage{font-size:18px;line-height:1.5;margin:24px 0 14px;color:#25243a}
+.bookingCompare *{box-sizing:border-box}.bookingCompare .personalValue{min-width:0}
+.bookingCompare .personalValue>label{display:block;margin:12px 0}
+.bookingCompare input:not([type=checkbox]),.bookingCompare select{display:block;width:100%;max-width:100%;min-height:44px;margin-top:6px;padding:11px 12px;border:1px solid #b7b3c6;border-radius:10px;background:#fff;color:#25243a;font-size:16px}
+.bookingCompare input[type=checkbox]{width:20px;height:20px;margin-right:8px;vertical-align:middle;accent-color:#6650b5}
+.bookingCompare label:has(input[type=checkbox]){min-height:44px;padding:8px 0;cursor:pointer}
+.bookingCompare button,.bookingCompare summary,.bookingCompare a{touch-action:manipulation}
+.bookingCompare button{min-height:44px}.bookingCompare a{display:inline-block;padding:12px 0}
+.bookingCompare :is(input,select,button,summary,a):focus-visible{outline:3px solid #6650b5;outline-offset:3px}
+.bookingCompare .bookingOptions article{min-width:0;overflow-wrap:anywhere}
+.bookingCompare .valueTable{max-width:100%;overscroll-behavior-x:contain}.bookingCompare .valueTable table{min-width:460px}
+.bookingCompare .bookingDecision li{font-size:14px;line-height:1.65;margin:8px 0}.bookingCompare .bookingDecision ol{padding-left:22px}
+@media(max-width:600px){.bookingCompare{padding:12px;border-radius:18px}.bookingCompare .sectionHead h3{font-size:24px}.bookingCompare .personalValue,.bookingCompare .bookingDecision,.comparisonSetup{padding:14px}.bookingCompare .valueInputs{grid-template-columns:1fr}.bookingCompare .bookingOptions article{padding:16px}.bookingCompare .bookingOptions strong{font-size:30px}.bookingCompare .bookingOptions p,.bookingCompare .bookingOptions span,.bookingCompare .bookingNote{font-size:14px}.comparisonOptional{display:none}.bookingCompare .personalValue h4{font-size:18px}.bookingCompare .valueTable{padding-bottom:6px}}
