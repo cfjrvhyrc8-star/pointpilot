@@ -1,10 +1,10 @@
 "use client";
+import {cardNamesMatch} from "../../lib/card-identity.js";
 
 import {useEffect,useMemo,useState} from "react";
 import {getSupabase} from "../../lib/supabase-browser.js";
 const money=value=>Number(value||0).toLocaleString("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0});
-const clean=value=>String(value||"").toLowerCase().replace(/credit card|metal edition|metal card|card|club|first|hdfc|icici|idfc|bank|american express india/g,"").replace(/[^a-z0-9]/g,"");
-const matches=(left,right)=>{const a=clean(left),b=clean(right);return Boolean(a&&b&&(a.includes(b)||b.includes(a)))};
+const matches=cardNamesMatch;
 const currentYearStart=()=>`${new Date().getFullYear()}-01-01`;
 const currentQuarterStart=()=>{const now=new Date();return `${now.getFullYear()}-${String(Math.floor(now.getMonth()/3)*3+1).padStart(2,"0")}-01`};
 

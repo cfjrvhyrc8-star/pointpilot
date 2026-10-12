@@ -1,4 +1,5 @@
 "use client";
+import {cardNamesMatch} from "../../lib/card-identity.js";
 
 import {useCallback,useEffect,useMemo,useState} from "react";
 import {clearPointPilotSession,getSupabase} from "../../lib/supabase-browser.js";
@@ -34,22 +35,8 @@ const FALLBACK_REWARD_RULES=[
  {issuer:"American Express India",card_name:"Platinum Travel",currency:"Membership Rewards",partner:"Marriott Bonvoy",partner_type:"hotel_transfer",transfer_ratio:1.0,route_status:"verified",confidence:"medium",notes:"1 Membership Reward point = 1 Marriott Bonvoy point.",verified_at:"2026-09-21"},
  {issuer:"American Express India",card_name:"Platinum Travel",currency:"Membership Rewards",partner:"Hilton Honors",partner_type:"hotel_transfer",transfer_ratio:0.6666666667,route_status:"verified",confidence:"medium",notes:"1 Membership Reward point = 1.5 Hilton Honors points. Current 2026 base route; promotional rates are not used.",verified_at:"2026-09-21"}
 ];
-function cardMatchesRule(cardName,rule){
- const clean=v=>String(v||"").toLowerCase().replace(/credit card|metal card|card|club|first|hdfc|icici|idfc|bank|american express india|scapia federal|federal/g,"").replace(/[^a-z0-9]/g,"");
- const n=clean(cardName),target=clean(rule?.card_name);
- return Boolean(target&&(n.includes(target)||target.includes(n)));
-}
-function cardMatchesCatalog(cardName,catalogCard){
- const aliases={
-   "scapia":["scapia","scapia federal credit card"],
-   "onecard":["onecard","one credit card"],
-   "dinersblackmetal":["diners black metal","diners club black metal"]
- };
- const clean=v=>String(v||"").toLowerCase().replace(/american express india|federal|credit|metal|club|card|first|hdfc|icici|idfc|bank/g,"").replace(/[^a-z0-9]/g,"");
- const wallet=clean(cardName),catalog=clean(catalogCard?.card_name);
- if(wallet&&catalog&&(wallet===catalog||wallet.includes(catalog)||catalog.includes(wallet)))return true;
- return Object.entries(aliases).some(([key,names])=>wallet===key&&names.some(name=>clean(name)===catalog));
-}
+const cardMatchesRule=(cardName,rule)=>cardNamesMatch(cardName,rule?.card_name);
+const cardMatchesCatalog=(cardName,card)=>cardNamesMatch(cardName,card?.card_name);
 function rulesForCard(cardName,rules){
  return (rules||[]).filter(r=>cardMatchesRule(cardName,r));
 }

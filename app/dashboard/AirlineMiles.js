@@ -1,12 +1,12 @@
 "use client";
+import {cardNamesMatch} from "../../lib/card-identity.js";
 import {planTransfer} from "../../lib/transfer-limits.js";
 import {useEffect,useMemo,useState} from "react";
 import {getSupabase} from "../../lib/supabase-browser.js";
 import {AIRLINE_PROGRAMS,AIRLINE_PROGRAMS_REVIEWED_AT,programForPartner} from "../../lib/airline-programs.js";
 
 const fmt=n=>Number(n||0).toLocaleString("en-IN");
-const clean=v=>String(v||"").toLowerCase().replace(/credit card|metal card|card|club|first|hdfc|icici|idfc|bank|american express india|scapia federal|federal/g,"").replace(/[^a-z0-9]/g,"");
-const matches=(cardName,rule)=>{const a=clean(cardName),b=clean(rule?.card_name);return Boolean(b&&(a.includes(b)||b.includes(a)))};
+const matches=(cardName,rule)=>cardNamesMatch(cardName,rule?.card_name);
 const ratioText=ratio=>{const n=Number(ratio);if(!Number.isFinite(n)||n<=0)return "rate unavailable";if(Math.abs(n-1)<.0001)return "1:1";if(n>1)return `${n.toFixed(n%1?2:0).replace(/0$/,"")}:1`;const received=1/n;return `1:${received.toFixed(received%1?2:0).replace(/0$/,"")}`};
 const daysUntil=value=>value?Math.ceil((new Date(`${value}T23:59:59`).getTime()-Date.now())/86400000):null;
 
