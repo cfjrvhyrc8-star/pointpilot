@@ -59,3 +59,4 @@
  .mobileBookingCosts dt{color:#596174}.mobileBookingCosts dd{margin:0;font-weight:700;color:#25243a;font-variant-numeric:tabular-nums}
  .mobileBookingCosts .costTotal{border-top:1px solid #dedfeb;margin-top:4px;padding-top:12px}.mobileBookingCosts .costTotal dt{color:#25243a;font-weight:700}
 }
+.bookingCompare .selectedRouteCaption{overflow-wrap:anywhere;padding:10px 12px;border-radius:8px;background:#f4f1fb;color:#394155}
