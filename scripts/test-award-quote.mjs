@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {evaluateAwardQuote} from '../lib/award-quote.js';
+const quote={cashFare:75000,taxes:8500,milesRequired:45000};
+assert.equal(evaluateAwardQuote(quote).net,66500);
+assert.equal(evaluateAwardQuote({...quote,taxes:0}).complete,true);
+assert.equal(evaluateAwardQuote({...quote,taxes:80000}).net,-5000);
+for(const field of Object.keys(quote))for(const value of ['', ' ', null, undefined, true, false, NaN, Infinity,-1])assert.equal(evaluateAwardQuote({...quote,[field]:value}).complete,false);
+assert.equal(evaluateAwardQuote({...quote,cashFare:0}).complete,false);
+assert.equal(evaluateAwardQuote({...quote,milesRequired:0}).complete,false);
+assert.equal(evaluateAwardQuote({...quote,milesRequired:1.5}).complete,false);
+assert.equal(evaluateAwardQuote({...quote,milesRequired:Number.MAX_SAFE_INTEGER+1}).complete,false);
+assert.equal(evaluateAwardQuote({cashFare:'75000',taxes:'8500',milesRequired:'45000'}).net,66500);
+assert.deepEqual(evaluateAwardQuote({...quote,taxes:''}).invalid,['taxes']);
+console.log('Award quote: 36 checks passed.');
