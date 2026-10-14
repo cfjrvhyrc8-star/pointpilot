@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {authStep} from '../lib/auth-timeout.js';
+assert.equal(await authStep(()=>Promise.resolve('verified'),'Verification',50),'verified');
+await assert.rejects(authStep(()=>Promise.reject(new Error('invalid link')),'Verification',50),/invalid link/);
+await assert.rejects(authStep(()=>{throw new Error('storage unavailable')},'Verification',50),/storage unavailable/);
+await assert.rejects(authStep(()=>new Promise(()=>{}),'Account verification',5),/Account verification timed out/);
+let resolveLate;
+let advanced=false;
+await authStep(()=>new Promise(resolve=>{resolveLate=resolve}),'Exchange',5).then(()=>{advanced=true},()=>{});
+resolveLate('late session');
+await Promise.resolve();
+assert.equal(advanced,false,'A late response cannot advance the failed callback');
+console.log('Auth timeout: 5 checks passed.');
