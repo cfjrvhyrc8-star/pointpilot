@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import "./test-auth-timeout.mjs";
+import "./test-login-flow.mjs";
 import "./test-award-quote.mjs";
 import "./test-trip-quote.mjs";
 import "./test-card-identity.mjs";
