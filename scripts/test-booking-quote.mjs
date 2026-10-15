@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {repriceDirectRoute,directBreakEven,validRedemptionAllowance} from '../lib/booking-quote.js';
 import {buildBookingDecision} from '../lib/booking-decision.js';
 const original={card:{card_name:'Diners Black Metal',points:75000},rule:{card_name:'Diners Black Metal',partner:'Flight portal',partner_type:'direct_travel',route_status:'verified',redemption_value:1,max_booking_coverage:0.7}};
@@ -41,3 +42,18 @@ assert.equal(validRedemptionAllowance('0'),true);
 assert.equal(JSON.stringify(original),before);
 assert.equal(compare(repriceDirectRoute(original,100000,0)).lowest.kind,'cash');
 console.log('Remaining redemption allowance: 27 checks passed.');
+
+// Exercise the component's actual scenario key expressions to prevent stale fees.
+const component=readFileSync(new URL('../app/dashboard/BookingComparison.js',import.meta.url),'utf8');
+const quoteExpression=component.match(/const quoteKey=(.*);/)[1];
+const feeExpression=component.match(/const feeKey=(.*);/)[1];
+const scenarioKey=new Function('cashFare','taxes','award','selectedRoute','portal','allowance',`const quoteKey=${quoteExpression};return ${feeExpression};`);
+const scenario=[100000,5000,{target:45000,program:{code:'test'},routes:[]},original,{enabled:false,fare:''},{enabled:false,points:''}];
+const key=scenarioKey(...scenario);
+const saved={[key]:{cash:100,direct:200,award:300,transfer:400}};
+assert.equal(saved[scenarioKey(...structuredClone(scenario))].direct,200);
+for(const [index,value] of [[0,110000],[1,6000],[2,{...scenario[2],target:50000}],[2,{...scenario[2],program:{code:'other'}}],[3,{...original,card:{...original.card,points:60000}}],[4,{enabled:true,fare:'120000'}],[5,{enabled:true,points:'25000'}]]){
+ const changed=structuredClone(scenario);changed[index]=value;
+ assert.equal(saved[scenarioKey(...changed)],undefined,'Changed quote must not inherit fees');
+}
+console.log('Booking fee scenario isolation: 8 checks passed.');
