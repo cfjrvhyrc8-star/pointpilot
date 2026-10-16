@@ -1,13 +1,25 @@
 "use client";
 import {useState} from "react";
 import {buildPersonalValue} from "../../lib/booking-decision.js";
-import {bookingSummary} from "../../lib/booking-summary.js";
+import {bookingSummary,bookingDecisionText} from "../../lib/booking-summary.js";
 const labels={cash:"Pay cash",direct:"Selected card redemption",award:"Airline award"};
 const money=n=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:2}).format(n);
 export default function PersonalValue({decision,direct,award}){
  const [values,setValues]=useState({});
+ const [exportError,setExportError]=useState("");
  const model=buildPersonalValue({decision,direct,award,values});
  const summary=bookingSummary(model);
+ function downloadDecision(){
+  setExportError("");
+  const text=bookingDecisionText(model,decision?.reason);
+  if(!text)return;
+  try{
+   const url=URL.createObjectURL(new Blob([text],{type:"text/plain;charset=utf-8"}));
+   const link=document.createElement("a");link.href=url;link.download="pointpilot-booking-comparison.txt";
+   document.body.appendChild(link);link.click();link.remove();
+   setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }catch{setExportError("Download unavailable. Please try again in your browser.");}
+ }
  if(!model||model.rows.length<2)return null;
  return <section className="personalValue" aria-label="Personal booking decision"><h4>Is using points actually better value?</h4><p>Enter the value you would give up by spending each kind of point. These are your assumptions, not PointPilot valuations. Leave an unknown value blank; enter zero only if you intentionally value it at zero.</p><div className="valueInputs">{model.requirements.map(item=><label key={item.key}>{item.label}<input type="number" min="0" step="0.01" inputMode="decimal" placeholder="Your value" value={values[item.key]??""} onChange={event=>setValues(previous=>({...previous,[item.key]:event.target.value}))}/></label>)}</div><p>Modeled cost = cash payable + value of points consumed. For an award, we count existing miles used plus the source card points transferred—not the newly transferred miles again.</p><div className="mobileBookingCosts" aria-label="Cash and points cost under your assumptions">{model.rows.map(row=><article key={row.kind} className={summary&&!summary.tied&&summary.best.kind===row.kind?"isLeading":""}><h5>{labels[row.kind]}</h5>{summary&&!summary.tied&&summary.best.kind===row.kind&&<span className="costLeader">Lowest modeled cost</span>}<dl><div><dt>Cash payable</dt><dd>{money(row.cash)}</dd></div><div><dt>Points value given up</dt><dd>{row.pointsValue==null?"Value needed":money(row.pointsValue)}</dd></div><div className="costTotal"><dt>Modeled total</dt><dd>{row.total==null?"Add points valuation":money(row.total)}</dd></div></dl></article>)}</div><div className="valueTable desktopBookingCosts" role="region" aria-label="Booking cost comparison table" tabIndex={0}><table><caption>Cash and points cost under your assumptions</caption><thead><tr><th scope="col">Option</th><th scope="col">Cash</th><th scope="col">Points value spent</th><th scope="col">Modeled cost</th></tr></thead><tbody>{model.rows.map(row=><tr key={row.kind}><th scope="row">{labels[row.kind]}</th><td>{money(row.cash)}</td><td>{row.pointsValue==null?"Value needed":money(row.pointsValue)}</td><td>{row.total==null?"—":money(row.total)}</td></tr>)}</tbody></table></div><div className="bookingDecision" aria-live="polite">
 <small>YOUR DECISION SUMMARY · CONDITIONAL ESTIMATE</small>
@@ -17,6 +29,7 @@ export default function PersonalValue({decision,direct,award}){
 {summary.saving>0&&<p>Modeled saving versus cash: {money(summary.saving)}. This includes your points valuation—it is not a guaranteed cash saving.</p>}
 <p>{summary.tied?"There is no meaningful cost advantage at displayed precision. Compare flexibility and transfer risk; exact cash ties favour keeping your points.":"The lead over the next eligible option is "+money(summary.margin)+". Extra costs or a change in your points valuations can erase that advantage."}</p>
 <h4>Before acting</h4><ol>{summary.checks.map(check=><li key={check}>{check}</li>)}</ol>
+<button type="button" onClick={downloadDecision}>Download decision summary</button><p>Downloads your current cost comparison and cautions as a text file. No account identifiers or wallet balances are included. Review personal financial assumptions before sharing; nothing is saved to your account.</p>{exportError&&<p role="alert">{exportError}</p>}
 </>:<><h4>Value your points to see a fair comparison</h4><p>Add every required value above. We do not declare a winner when an option is only partially valued.</p></>}
 {decision?.reason&&<p>The airline award is excluded from this ranking: {decision.reason==="funding"?"its mileage target is not fully funded (or a target is missing).":"a required transfer route or its limits still needs verification."}</p>}
 <p>Only the selected card route and eligible scenarios are compared. This is not a search of every booking option or confirmation of award availability.</p>
