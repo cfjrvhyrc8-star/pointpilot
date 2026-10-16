@@ -1,7 +1,8 @@
 "use client";
 import {cardNamesMatch} from "../../lib/card-identity.js";
 
-import {useCallback,useEffect,useMemo,useState} from "react";
+import {useCallback,useEffect,useMemo,useRef,useState} from "react";
+import {createAccountBoundary} from "../../lib/account-boundary.js";
 import {clearPointPilotSession,getSupabase} from "../../lib/supabase-browser.js";
 import BestUseSection from "./BestUseSection.js";
 import SpendSmart from "./SpendSmart.js";
@@ -250,16 +251,22 @@ function CommandDeck({wallet,onPlanTrip,onValue,onWallet,onRoutes,onMiles}){
  </section>}
 
 export default function Dashboard(){
+ const boundary=useRef(null);
+ if(!boundary.current)boundary.current=createAccountBoundary();
  const[wallet,setWallet]=useState([]),[user,setUser]=useState(null),[status,setStatus]=useState("loading"),[loadError,setLoadError]=useState(""),[tab,setTab]=useState("flights"),[greeting,setGreeting]=useState("Welcome back");
  const loadWallet=useCallback(async()=>{
+   const ticket=boundary.current.begin();
    setStatus("loading"); setLoadError("");
+   setWallet([]);setUser(null);
    try{
      const supabase=getSupabase();
      // Verify the stored JWT with Supabase Auth before reading account-bound data.
      // getSession() alone only reads browser storage and must not establish wallet identity.
      const {data:{user:verifiedUser},error:userError}=await within(supabase.auth.getUser(),12000,"We could not verify the signed-in account.");
+     if(!boundary.current.current(ticket))return;
      if(userError) throw userError;
      if(!verifiedUser){location.replace("/login");return}
+     if(!boundary.current.verify(ticket,verifiedUser.id)){location.replace("/dashboard");return}
      const expectedEmail=String(window.localStorage.getItem("pointpilot_expected_email")||"").toLowerCase();
      if(expectedEmail&&String(verifiedUser.email||"").toLowerCase()!==expectedEmail){
        await clearPointPilotSession();
@@ -268,9 +275,11 @@ export default function Dashboard(){
      }
      setUser(verifiedUser);
      const {data:w,error:walletError}=await within(supabase.from("wallet_cards").select("*").eq("user_id",verifiedUser.id).order("created_at"),12000,"The wallet request timed out. Please try again.");
+     if(!boundary.current.current(ticket))return;
      if(walletError) throw walletError;
      setWallet(w||[]); setStatus("ready");
    }catch(error){
+     if(!boundary.current.current(ticket))return;
      console.error("Unable to load PointPilot wallet",error);
      setLoadError(error?.message||"PointPilot could not load your wallet.");
      setStatus("error");
@@ -280,9 +289,17 @@ export default function Dashboard(){
    loadWallet();setGreeting(greetingForHour(new Date().getHours()));
    const supabase=getSupabase();
    const{data:{subscription}}=supabase.auth.onAuthStateChange((event,nextSession)=>{
-     if(event==="SIGNED_OUT"||!nextSession?.user)location.replace("/login");
+     const nextId=nextSession?.user?.id||null;
+     const changed=boundary.current.observe(nextId);
+     if(changed||event==="SIGNED_OUT"||!nextId){
+       boundary.current.invalidate();
+       setWallet([]);setUser(null);setLoadError("");setStatus("loading");
+       // Full navigation discards every child component's account-bound state.
+       // Do not call asynchronous Supabase methods inside its auth callback.
+       location.replace(nextId?"/dashboard":"/login");
+     }
    });
-   return()=>subscription.unsubscribe();
+   return()=>{boundary.current.invalidate();subscription.unsubscribe()};
  },[loadWallet]);
  const total=useMemo(()=>wallet.reduce((a,x)=>a+Number(x.points||0),0),[wallet]); const holderName=accountDisplayName(user); const holderEmail=user?.email||"";
  if(status==="loading")return <main className="page"><div className="loader">Loading your wallet…</div></main>;
