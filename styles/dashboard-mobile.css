@@ -15,6 +15,9 @@
  .dashboardPage .dashboardRail i{font-size:18px}
  .dashboardContent section{scroll-margin-top:20px}
  .dashboardContent input,.dashboardContent select{max-width:100%}
+ /* iOS date controls have intrinsic sizing unlike ordinary text inputs. */
+ .dashboardPage input[type=date]{display:block;appearance:none;-webkit-appearance:none;box-sizing:border-box;width:100%;min-width:0;max-width:100%;text-align:left}
+ .dashboardPage input[type=date]::-webkit-date-and-time-value{min-width:0;text-align:left}
 }
 @media(max-width:600px){
  .dashboardPage .nav{display:block}
