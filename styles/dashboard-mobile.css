@@ -1,0 +1,48 @@
+/* Mobile layout overrides: constrain content, not the document's overflow. */
+@media(max-width:850px){
+ .dashboardPage{width:100%;padding:0 16px calc(112px + env(safe-area-inset-bottom,0px))}
+ .dashboardPage .nav{position:static;margin:0 -16px;padding:18px 16px;backdrop-filter:none}
+ .dashboardContent,.dashboardContent *{min-width:0}
+ .dashboardContent{width:100%}
+ .dashboardPage .atlas{grid-template-columns:minmax(0,1fr)}
+ .dashboardPage .atlasBalances{display:block}
+ .dashboardPage .ledgerList{display:grid;grid-template-columns:minmax(0,1fr);gap:0;overflow:visible}
+ .dashboardPage .ledgerList>div{min-width:0;border-left:0;border-top:1px solid #e6e8ef;padding:12px 0}
+ .dashboardPage .ledgerList span{max-width:none;white-space:normal;overflow:visible}
+ .dashboardPage .dashboardRail{left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));max-width:calc(100% - 24px);border-radius:18px;overscroll-behavior-x:contain}
+ .dashboardPage .dashboardRail button{flex:0 0 64px;min-height:52px;color:#c3c8da}
+ .dashboardPage .dashboardRail span{font-size:10px}
+ .dashboardPage .dashboardRail i{font-size:18px}
+ .dashboardContent section{scroll-margin-top:20px}
+ .dashboardContent input,.dashboardContent select{max-width:100%}
+}
+@media(max-width:600px){
+ .dashboardPage .nav{display:block}
+ .dashboardPage .navAccount{display:flex;width:100%;gap:8px;margin-top:14px}
+ .dashboardPage .navAccount>div{flex:1 0 100%;order:-1;text-align:left;line-height:1.4}
+ .dashboardPage .navAccount strong{font-size:14px}
+ .dashboardPage .navAccount small{font-size:12px}
+ .dashboardPage .navAccount .linkBtn{padding:10px 12px;font-size:12px;color:#30364b}
+ .dashboardPage .atlasHeader{padding:24px 0 20px;border-radius:20px;box-shadow:none}
+ .dashboardPage .atlasHeader h1{font-size:32px;line-height:1.12;letter-spacing:-1.3px;overflow-wrap:anywhere}
+ .dashboardPage .atlasHeader p{font-size:14px;line-height:1.6}
+ .dashboardPage .atlasHeader .total{width:100%;min-width:0;margin-top:18px;padding:20px;border-radius:18px}
+ .dashboardPage .actionCentre{padding:20px 16px;border-radius:20px}
+ .dashboardPage .actionIntro h2{font-size:25px;line-height:1.15;letter-spacing:-.8px}
+ .dashboardPage .actionCard{min-height:0;padding:18px}
+ .dashboardPage .actionCard h3{margin:18px 0 10px;font-size:18px}
+ .dashboardPage .actionCard p{font-size:13px;line-height:1.55;margin-bottom:16px}
+ .dashboardPage .actionCard>b{font-size:13px}
+ .dashboardPage .atlasHero{min-height:0;padding:24px 20px}
+ .dashboardPage .atlasHero h2{font-size:32px;line-height:1.08;letter-spacing:-1.2px;margin-top:28px}
+ .dashboardPage .atlasFootnote{position:static!important;display:block;margin-top:20px;line-height:1.5}
+ .dashboardPage .atlasRoute,.dashboardPage .atlasSignals,.dashboardPage .atlasBalances{padding:20px;border-radius:20px}
+ .dashboardPage .atlasNav{grid-template-columns:minmax(0,1fr)}
+ .dashboardPage .atlasNav button{min-height:80px;border-right:0;border-bottom:1px solid #e6e8ef}
+ .dashboardPage .atlasNav button:last-child{border-bottom:0}
+ .dashboardPage .planInputsTop,.dashboardPage .sectionHead{flex-wrap:wrap;gap:12px}
+ .dashboardPage .planCategoryGrid>label{grid-template-columns:32px minmax(0,1fr);gap:10px}
+ .dashboardPage .planCategoryGrid>label>div:last-child{grid-column:2;width:100%}
+ .dashboardPage .walletGrid{grid-template-columns:minmax(0,1fr)}
+ .dashboardPage .walletGrid>div{padding:18px;border-radius:18px}
+}

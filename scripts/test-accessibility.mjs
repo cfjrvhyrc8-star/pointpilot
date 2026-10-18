@@ -17,4 +17,12 @@ assert.match(read("app/dashboard/page.js"), /role="status">Loading your wallet/)
 assert.match(css, /\.dashHero\.atlasHeader h1\{color:#171a2d\}/);
 assert.match(css, /overflow-x:auto/);
 assert.match(css, /flex:0 0 58px/);
-console.log("Accessibility: 12 source-contract checks passed (browser QA separate).");
+const mobile = read("styles/dashboard-mobile.css");
+assert.match(read("app/layout.js"), /styles\/dashboard-mobile\.css/);
+assert.match(mobile, /\.nav\{position:static/);
+assert.match(mobile, /\.atlas\{grid-template-columns:minmax\(0,1fr\)/);
+assert.match(mobile, /\.ledgerList>div\{min-width:0/);
+assert.match(mobile, /112px \+ env\(safe-area-inset-bottom/);
+assert.match(mobile, /\.atlasNav\{grid-template-columns:minmax\(0,1fr\)/);
+assert.doesNotMatch(mobile, /overflow-x:\s*(hidden|clip)/);
+console.log("Accessibility: 19 source-contract checks passed (browser QA separate).");
