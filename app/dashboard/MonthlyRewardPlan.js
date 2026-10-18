@@ -2,6 +2,7 @@
 
 import {useEffect,useMemo,useState} from "react";
 import {getSupabase} from "../../lib/supabase-browser.js";
+import {saveWithRecovery} from "../../lib/save-recovery.js";
 import {buildMonthlyPlan} from "../../lib/monthly-plan.js";
 import {monthlyPlanCsv} from "../../lib/plan-export.js";
 const categories=[
@@ -31,7 +32,7 @@ export default function MonthlyRewardPlan({wallet,userId}){
   }catch{setError("Unable to download your plan. Please try again.")}
   finally{if(url)setTimeout(()=>URL.revokeObjectURL(url),1000)}
  };
- const save=async()=>{setSaving(true);setSaved(false);setError("");const{error:saveError}=await getSupabase().from("user_spend_profiles").upsert({user_id:userId,monthly_spend:Object.fromEntries(categories.map(category=>[category.key,Math.max(0,Number(spend[category.key])||0)])),updated_at:new Date().toISOString()},{onConflict:"user_id"});setSaving(false);if(saveError){setError(saveError.message);return}setSaved(true)};
+ const save=async()=>{if(saving||!userId)return;await saveWithRecovery({request:signal=>getSupabase().from("user_spend_profiles").upsert({user_id:userId,monthly_spend:Object.fromEntries(categories.map(category=>[category.key,Math.max(0,Number(spend[category.key])||0)])),updated_at:new Date().toISOString()},{onConflict:"user_id"}).abortSignal(signal),setSaving,setSaved,setError})};
  const update=(key,value)=>{setSaved(false);setSpend(previous=>({...previous,[key]:Math.max(0,Number(value)||0)}))};
  return <section className="monthlyPlan" id="monthly-plan">
   <div className="sectionHead monthlyPlanHead"><div><span className="sectionKicker">MY REWARD PLAN</span><h2>Route your whole month—not one purchase.</h2><p>See what your current wallet could return when every category is assigned to its strongest verified card.</p></div><span className="planPreview">FOUNDING PREVIEW</span></div>

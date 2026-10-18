@@ -1,4 +1,8 @@
 /* Mobile layout overrides: constrain content, not the document's overflow. */
+@media(min-width:851px){
+ .dashboardPage .goalInputs input[type=date]::-webkit-date-and-time-value{display:flex;align-items:center;height:100%;margin:0}
+ .dashboardPage .goalInputs input[type=date]::-webkit-datetime-edit{display:inline-flex;align-items:center;height:100%;padding-block:0}
+}
 @media(max-width:850px){
  .dashboardPage{width:100%;padding:0 16px calc(112px + env(safe-area-inset-bottom,0px))}
  .dashboardPage .nav{position:static;margin:0 -16px;padding:18px 16px;backdrop-filter:none}

@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import "./test-accessibility.mjs";
+import "./test-save-recovery.mjs";
 import "./test-account-boundary.mjs";
 import "./test-deployment-quote.mjs";
 import "./test-auth-timeout.mjs";
