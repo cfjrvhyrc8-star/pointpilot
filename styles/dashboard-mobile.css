@@ -18,6 +18,8 @@
  /* iOS date controls have intrinsic sizing unlike ordinary text inputs. */
  .dashboardPage input[type=date]{display:block;appearance:none;-webkit-appearance:none;box-sizing:border-box;width:0;min-width:100%;max-width:100%;overflow:hidden;text-align:left}
  .dashboardPage input[type=date]::-webkit-date-and-time-value{display:block;min-width:0;max-width:100%;text-align:left}
+ /* Fixed-height trip fields need their native date value vertically centered. */
+ .dashboardPage .goalInputs input[type=date]::-webkit-date-and-time-value{display:flex;align-items:center;height:100%;margin:0}
  .dashboardPage .searchGrid>label,.dashboardPage .goalInputs>label,.dashboardPage .progressInputs>label{min-width:0;max-width:100%}
 }
 @media(max-width:600px){
