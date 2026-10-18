@@ -8,6 +8,16 @@
 .auth .errorBox,.auth .notice,.loadFailure .errorBox{overflow-wrap:anywhere;line-height:1.6}
 .auth button:disabled{cursor:not-allowed}
 .dashboardContent{min-width:0}
+.dashboardPage .dashHero.atlasHeader h1{color:#171a2d}
+.dashboardPage .dashHero.atlasHeader .eyebrow{color:#5032bc}
+/* Nine destinations must remain reachable on narrow screens. */
+@media(max-width:850px){
+ .dashboardPage .dashboardRail{justify-content:flex-start;overflow-x:auto;gap:8px;scroll-padding:12px}
+ .dashboardPage .dashboardRail button{flex:0 0 58px;min-height:48px}
+ .dashboardPage .dashboardRail button:focus-visible{outline-offset:-3px;outline-color:#c4b5fd}
+}
+.dashboardPage input:focus-visible,.dashboardPage select:focus-visible,
+.auth input:focus-visible{outline:3px solid #5032bc;outline-offset:3px}
 @media(max-width:700px){
  .dashboardPage .nav{flex-wrap:wrap;gap:12px}
  .dashboardPage .navAccount{display:flex;flex-wrap:wrap;gap:8px;max-width:100%}

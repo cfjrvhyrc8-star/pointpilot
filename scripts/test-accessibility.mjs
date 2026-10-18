@@ -14,4 +14,7 @@ assert.match(css, /font-size:16px/);
 assert.match(login, /aria-busy=\{loading\}/);
 assert.match(login, /aria-atomic/);
 assert.match(read("app/dashboard/page.js"), /role="status">Loading your wallet/);
-console.log("Accessibility: 9 source-contract checks passed (browser QA separate).");
+assert.match(css, /\.dashHero\.atlasHeader h1\{color:#171a2d\}/);
+assert.match(css, /overflow-x:auto/);
+assert.match(css, /flex:0 0 58px/);
+console.log("Accessibility: 12 source-contract checks passed (browser QA separate).");
