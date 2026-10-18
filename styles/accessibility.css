@@ -1,0 +1,31 @@
+/* Loaded last: shared interaction and small-screen safeguards. */
+:where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{
+ outline:3px solid #5032bc;outline-offset:4px;
+}
+.auth button,.auth input,.auth select,.dashboardPage button,.dashboardPage select,
+.dashboardPage input:not([type=checkbox]):not([type=radio]){min-height:44px}
+.auth .authHint{display:block;line-height:1.6}
+.auth .errorBox,.auth .notice,.loadFailure .errorBox{overflow-wrap:anywhere;line-height:1.6}
+.auth button:disabled{cursor:not-allowed}
+.dashboardContent{min-width:0}
+@media(max-width:700px){
+ .dashboardPage .nav{flex-wrap:wrap;gap:12px}
+ .dashboardPage .navAccount{display:flex;flex-wrap:wrap;gap:8px;max-width:100%}
+ .dashboardPage .navAccount>div{display:block;flex:1 0 100%;min-width:0;order:-1}
+ .dashboardPage .navAccount>div small{overflow-wrap:anywhere;font-size:12px;line-height:1.5}
+ .dashboardPage .navAccount .linkBtn{font-size:13px;padding:10px 14px;min-height:44px}
+ .auth input,.dashboardPage input,.dashboardPage select{font-size:16px}
+ .auth .accountSwitchNotice{flex-direction:column;align-items:flex-start;font-size:13px;overflow-wrap:anywhere}
+ .auth .accountSwitchNotice button{font-size:13px}
+}
+@media(max-width:420px){
+ .auth{padding:20px 14px}
+ .authCard{padding:22px 18px;margin-top:24px}
+ .authCard h1{font-size:29px;letter-spacing:-1px;line-height:1.12}
+ .auth .socialAuth{grid-template-columns:1fr;display:grid}
+ .auth .socialBtn{width:100%;min-width:0}
+}
+@media(prefers-reduced-motion:reduce){
+ html{scroll-behavior:auto}
+ *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}

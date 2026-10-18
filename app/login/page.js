@@ -85,7 +85,7 @@ export default function Login(){
       <h1>Open your PointPilot wallet</h1>
       <p>Use Facebook or a one-time email link. No PointPilot password to remember.</p>
       {activeEmail&&<div className="accountSwitchNotice"><span>Currently signed in as <strong>{activeEmail}</strong></span><button type="button" disabled={loading} onClick={async()=>{setLoading(true);try{await clearLocalSession()}catch(error){setMsg(friendlyError(error))}finally{setLoading(false)}}}>Use another account</button></div>}
-      <form onSubmit={submit}>
+      <form onSubmit={submit} aria-busy={loading}>
         <label className="authLabel">Name
           <input required type="text" autoComplete="name" placeholder="Your name" value={name} onChange={e=>setName(e.target.value)}/>
         </label>
@@ -101,7 +101,7 @@ export default function Login(){
         <button className="socialBtn" type="button" disabled={loading} onClick={()=>socialLogin("facebook")}><span aria-hidden="true">f</span> Continue with Facebook</button>
         <button className="socialBtn" type="button" disabled title="Apple sign-in is planned for a later release"><span aria-hidden="true">●</span> Apple — coming later</button>
       </div>
-      {msg&&<div role="status" className={msg.startsWith("Secure")?"notice":"errorBox"}>{msg}</div>}
+      {msg&&<div role={msg.startsWith("Secure")?"status":"alert"} aria-atomic="true" className={msg.startsWith("Secure")?"notice":"errorBox"}>{msg}</div>}
       <small className="authHint">Authentication is handled by Supabase. PointPilot never receives your Facebook password. Facebook uses the account currently active on facebook.com; for a different person, use their email link or switch Facebook accounts first. Apple sign-in remains intentionally deferred.</small>
     </div>
   </main>;

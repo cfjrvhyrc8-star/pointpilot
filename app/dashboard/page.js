@@ -302,7 +302,7 @@ export default function Dashboard(){
    return()=>{boundary.current.invalidate();subscription.unsubscribe()};
  },[loadWallet]);
  const total=useMemo(()=>wallet.reduce((a,x)=>a+Number(x.points||0),0),[wallet]); const holderName=accountDisplayName(user); const holderEmail=user?.email||"";
- if(status==="loading")return <main className="page"><div className="loader">Loading your wallet…</div></main>;
+ if(status==="loading")return <main className="page" aria-busy="true"><div className="loader" role="status">Loading your wallet…</div></main>;
  if(status==="error")return <main className="page"><div className="loadFailure"><div className="eyebrow">WALLET CONNECTION</div><h1>Your sign-in worked.</h1><p>We couldn’t retrieve the wallet just yet. Your cards have not been changed.</p><div className="errorBox">{loadError}</div><button className="btn primary" onClick={loadWallet}>Try loading wallet again</button><button className="linkBtn" onClick={()=>getSupabase().auth.signOut().finally(()=>location.replace("/login"))}>Sign in again</button></div></main>;
  const goTo=selector=>document.querySelector(selector)?.scrollIntoView({behavior:"smooth",block:"start"});
  const planTrip=()=>{setTab("flights");setTimeout(()=>goTo(".toolArea"),0)};
