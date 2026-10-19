@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {discoverUnownedCards} from '../lib/card-discovery.js';
+const card=(id,percent,fee=0)=>({id,name:id,reviewed:true,model:'simple-category-rates',sourceUrl:'https://example.test/issuer',validUntil:'2027-01-01',annualFeeTotal:fee,rates:{general:{percent,monthlySpendCap:10000}}});
+const base={asOf:'2026-10-19',spend:{general:20000},owned:[card('existing',1)],candidates:[card('existing',10),card('new',2,500),card('costly',2,2000)]};
+const result=discoverUnownedCards(base);assert.equal(result.recommendations.length,1);assert.equal(result.recommendations[0].annualNetGain,700);assert.equal(result.recommendations[0].applyUrl,null);
+assert.equal(discoverUnownedCards({...base,spend:{general:0}}).status,'no-additional-card');
+assert.equal(discoverUnownedCards({...base,owned:[{...card('existing',1),reviewed:false}]}).status,'review-required');
+assert.equal(discoverUnownedCards({...base,asOf:'2028-01-01'}).status,'review-required');
+assert.throws(()=>discoverUnownedCards({...base,spend:{general:Infinity}}));
+assert.equal(discoverUnownedCards({...base,candidates:[card('new',2,500),card('new',2,500)]}).recommendations.length,1);
+assert.equal(discoverUnownedCards({...base,candidates:[{...card('new',2),name:'existing'}]}).recommendations.length,0);
+assert.equal(discoverUnownedCards({...base,candidates:[{...card('new',2),model:'shared-cap'}]}).recommendations.length,0);
+console.log('Card discovery: owned/alias exclusion, incremental cap/fee value, duplicate candidates, stale/unsupported rules, invalid spend and disabled application links passed.');

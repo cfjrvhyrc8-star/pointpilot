@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {draftProgrammeAverage,draftConciergeQuote} from '../lib/concierge-pricing.js';
+const samples=Array.from({length:10},(_,i)=>({id:`q${i}`,programme:'test',currency:'INR',verified:true,available:true,source:'https://example.test/quote',checkedAt:'2026-10-19',cashPrice:(i+1)*1000+100,awardFees:100,points:1000}));
+const average=draftProgrammeAverage({programme:'test',samples,minSamples:10});
+assert.equal(average.rate,5.5);assert.equal(average.trimmedEachEnd,1);assert.equal(average.checkoutEnabled,false);
+for(const bad of [samples.slice(1),[...samples.slice(1),samples[1]],samples.map(s=>({...s,available:false})),samples.map(s=>({...s,currency:'USD'})),samples.map(s=>({...s,points:0}))])assert.throws(()=>draftProgrammeAverage({programme:'test',samples:bad,minSamples:10}));
+const line={fundingChainId:'award1',kind:'final-redemption',programme:'test',rateVersion:'draft-1',points:50000,rate:.8};
+const quote=draftConciergeQuote({cashSpent:20000,redemptions:[line]});
+assert.equal(quote.projectCost,60000);assert.equal(quote.serviceFee,3000);assert.equal(quote.checkoutEnabled,false);assert.equal(quote.taxes,null);
+assert.throws(()=>draftConciergeQuote({cashSpent:20000,redemptions:[line,line]}));
+assert.throws(()=>draftConciergeQuote({cashSpent:20000,redemptions:[{...line,kind:'transfer'}]}));
+for(const cashSpent of [-1,NaN,Infinity,'20000',0])assert.throws(()=>draftConciergeQuote({cashSpent}));
+assert.equal(draftConciergeQuote({cashSpent:1000}).serviceFee,50);
+console.log('Concierge draft pricing: trimmed averages, evidence checks, insufficient samples, fee calculation, duplicate funding, invalid values and checkout lock passed.');

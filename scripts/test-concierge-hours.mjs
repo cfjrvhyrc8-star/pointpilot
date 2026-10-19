@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {conciergeOpenAt} from '../lib/concierge-hours.js';
+assert.equal(conciergeOpenAt('2026-10-19T03:59:00Z').open,false);
+assert.equal(conciergeOpenAt('2026-10-19T04:00:00Z').open,true);
+assert.equal(conciergeOpenAt('2026-10-19T12:29:00Z').open,true);
+assert.equal(conciergeOpenAt('2026-10-19T12:30:00Z').open,false);
+assert.equal(conciergeOpenAt('2026-10-24T04:00:00Z').open,true);
+assert.equal(conciergeOpenAt('2026-10-25T04:00:00Z').open,false);
+assert.equal(conciergeOpenAt('2026-10-19T04:00:00Z',['2026-10-19']).open,false);
+assert.throws(()=>conciergeOpenAt('invalid'));
+console.log('Concierge office hours: IST opening/closing boundaries, Saturday, Sunday and holiday override passed.');

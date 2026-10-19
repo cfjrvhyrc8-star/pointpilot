@@ -1,6 +1,10 @@
 import fs from "node:fs";
 import "./test-accessibility.mjs";
 import "./test-save-recovery.mjs";
+import "./test-load-recovery.mjs";
+import "./test-concierge-pricing.mjs";
+import "./test-card-discovery.mjs";
+import "./test-concierge-hours.mjs";
 import "./test-account-boundary.mjs";
 import "./test-deployment-quote.mjs";
 import "./test-auth-timeout.mjs";

@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {startLoad} from '../lib/load-recovery.js';
+const run=request=>{const events=[];const task=startLoad({request,onSuccess:v=>events.push(['success',v]),onError:e=>events.push(['error',e.message]),onSettled:()=>events.push(['settled'])},10);return {events,...task}};
+const success=run(()=>42);await success.done;assert.deepEqual(success.events,[['success',42],['settled']]);
+const error=run(()=>{throw Error('offline')});await error.done;assert.deepEqual(error.events,[['error','offline'],['settled']]);
+let signal,resolve;const slow=run(s=>{signal=s;return new Promise(r=>resolve=r)});await slow.done;assert.equal(signal.aborted,true);assert.match(slow.events[0][1],/timed out/);resolve(1);await Promise.resolve();assert.equal(slow.events.length,2);
+let lateResolve;const cancelled=run(()=>new Promise(r=>lateResolve=r));await Promise.resolve();cancelled.cancel();lateResolve(3);await cancelled.done;assert.deepEqual(cancelled.events,[]);
+const retry=run(()=>4);await retry.done;assert.equal(retry.events[0][1],4);
+const abandoned=run(()=>new Promise(()=>{}));await Promise.resolve();abandoned.cancel();await abandoned.done;assert.deepEqual(abandoned.events,[]);
+let requested=false;const immediate=run(()=>{requested=true});immediate.cancel();await immediate.done;assert.equal(requested,false);
+console.log('Load recovery: success, failure, timeout, abort, late response, cancellation and fresh retry passed.');

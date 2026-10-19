@@ -3,6 +3,7 @@
 import {useEffect,useMemo,useState} from "react";
 import {getSupabase} from "../../lib/supabase-browser.js";
 import {saveWithRecovery} from "../../lib/save-recovery.js";
+import {startLoad} from "../../lib/load-recovery.js";
 import {buildMonthlyPlan} from "../../lib/monthly-plan.js";
 import {monthlyPlanCsv} from "../../lib/plan-export.js";
 const categories=[
@@ -19,7 +20,10 @@ const money=value=>Number(value||0).toLocaleString("en-IN",{style:"currency",cur
 
 export default function MonthlyRewardPlan({wallet,userId}){
  const[spend,setSpend]=useState(emptySpend),[rules,setRules]=useState([]),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[saved,setSaved]=useState(false),[error,setError]=useState("");
- useEffect(()=>{if(!userId)return;let active=true;(async()=>{const sb=getSupabase();const[{data:profile,error:profileError},{data:ruleRows,error:ruleError}]=await Promise.all([sb.from("user_spend_profiles").select("monthly_spend").eq("user_id",userId).maybeSingle(),sb.from("spend_rules").select("*").eq("active",true)]);if(!active)return;if(profileError&&profileError.code!=="PGRST116")throw profileError;if(ruleError)throw ruleError;if(profile?.monthly_spend)setSpend({...emptySpend,...profile.monthly_spend});setRules(ruleRows||[]);setLoading(false)})().catch(err=>{if(active){setError(err?.message||"Unable to load your monthly plan.");setLoading(false)}});return()=>{active=false}},[userId]);
+ const[loadError,setLoadError]=useState(""),[loadAttempt,setLoadAttempt]=useState(0);
+ useEffect(()=>{setSpend(emptySpend);setRules([]);setSaved(false);setError("");setLoadError("");setLoading(true);if(!userId){setLoading(false);setLoadError("Sign in to load your monthly plan.");return}
+  const task=startLoad({request:signal=>{const sb=getSupabase();return Promise.all([sb.from("user_spend_profiles").select("monthly_spend").eq("user_id",userId).maybeSingle().abortSignal(signal),sb.from("spend_rules").select("*").eq("active",true).abortSignal(signal)])},onSuccess:([{data:profile,error:profileError},{data:ruleRows,error:ruleError}])=>{if(profileError)throw profileError;if(ruleError)throw ruleError;setSpend({...emptySpend,...profile?.monthly_spend});setRules(ruleRows||[])},onError:err=>setLoadError(err?.message||"Unable to load your monthly plan."),onSettled:()=>setLoading(false)});return task.cancel;
+ },[userId,loadAttempt]);
  const model=useMemo(()=>buildMonthlyPlan({wallet,rules,spend,categories}),[spend,wallet,rules]);
  const downloadPlan=()=>{
   let url;
@@ -32,11 +36,11 @@ export default function MonthlyRewardPlan({wallet,userId}){
   }catch{setError("Unable to download your plan. Please try again.")}
   finally{if(url)setTimeout(()=>URL.revokeObjectURL(url),1000)}
  };
- const save=async()=>{if(saving||!userId)return;await saveWithRecovery({request:signal=>getSupabase().from("user_spend_profiles").upsert({user_id:userId,monthly_spend:Object.fromEntries(categories.map(category=>[category.key,Math.max(0,Number(spend[category.key])||0)])),updated_at:new Date().toISOString()},{onConflict:"user_id"}).abortSignal(signal),setSaving,setSaved,setError})};
+ const save=async()=>{if(saving||loading||loadError||!userId)return;await saveWithRecovery({request:signal=>getSupabase().from("user_spend_profiles").upsert({user_id:userId,monthly_spend:Object.fromEntries(categories.map(category=>[category.key,Math.max(0,Number(spend[category.key])||0)])),updated_at:new Date().toISOString()},{onConflict:"user_id"}).abortSignal(signal),setSaving,setSaved,setError})};
  const update=(key,value)=>{setSaved(false);setSpend(previous=>({...previous,[key]:Math.max(0,Number(value)||0)}))};
  return <section className="monthlyPlan" id="monthly-plan">
   <div className="sectionHead monthlyPlanHead"><div><span className="sectionKicker">MY REWARD PLAN</span><h2>Route your whole month—not one purchase.</h2><p>See what your current wallet could return when every category is assigned to its strongest verified card.</p></div><span className="planPreview">FOUNDING PREVIEW</span></div>
-  {loading?<div className="notice">Building your monthly reward plan…</div>:error&&!rules.length?<div className="errorBox">{error}</div>:<div className="monthlyPlanShell">
+  {loading?<div className="notice" role="status">Building your monthly reward plan…</div>:loadError?<div className="errorBox" role="alert">{loadError} <button type="button" onClick={()=>setLoadAttempt(value=>value+1)}>Retry loading plan</button></div>:<div className="monthlyPlanShell">
    <div className="planInputs"><div className="planInputsTop"><div><small>01 / YOUR MONTH</small><h3>Monthly spending profile</h3></div><button className="planExample" onClick={()=>{setSaved(false);setSpend(exampleSpend)}}>Load an example</button></div><div className="planCategoryGrid">{categories.map(category=><label key={category.key}><i>{category.icon}</i><span><b>{category.label}</b><small>{category.hint}</small></span><div><em>₹</em><input type="number" min="0" step="500" value={spend[category.key]||""} placeholder="0" onChange={event=>update(category.key,event.target.value)}/></div></label>)}</div><div className="planSave"><button onClick={save} disabled={saving||!userId}>{saving?"Saving…":"Save my monthly plan"}</button>{saved&&<span>✓ Plan saved securely</span>}{error&&<span className="planError">{error}</span>}</div></div>
    <aside className="planValue"><small>02 / VALUE OPPORTUNITY</small><h3>Your wallet&apos;s modeled upside</h3><div className="annualValue"><span>ILLUSTRATIVE ANNUAL DIFFERENCE</span><strong>{model.annualIncremental==null?"Not comparable":money(model.annualIncremental)}</strong><p>Compared with the best one-card model covering the same modeled categories—not savings already achieved.</p></div><dl><div><dt>Monthly spend entered</dt><dd>{money(model.monthlySpend)}</dd></div><div><dt>Spend inside modeled caps</dt><dd>{money(model.coveredSpend)}</dd></div><div><dt>Outside caps or unmatched</dt><dd>{money(model.unmodeledSpend)}</dd></div><div><dt>Illustrative annual reward value</dt><dd>{money(model.annualOptimized)}</dd></div><div><dt>Comparable one-card baseline</dt><dd>{model.baseline?.card.card_name||"No complete comparison available"}</dd></div></dl><div className="planPayback neutral">Annual figures repeat this month 12 times. They exclude card fees, interest, FX costs and unmodeled shared caps. Conditional points values are not cashback or a guarantee that membership pays for itself.</div></aside>
   </div>}
