@@ -1,0 +1,43 @@
+// Isolated PostgreSQL/WASM. Never connects to hosted data.
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {pathToFileURL} from 'node:url';
+const {PGlite}=await import(pathToFileURL(process.argv[2]).href);
+const db=new PGlite();
+const A='00000000-0000-4000-8000-000000000001',B='00000000-0000-4000-8000-000000000002',S='00000000-0000-4000-8000-000000000003';
+let checks=0;
+const eq=(a,b)=>{assert.deepEqual(a,b);checks++};
+const reject=async(sql,args=[])=>{await assert.rejects(db.query(sql,args));checks++};
+const user=async id=>{await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id]);await db.exec('set role authenticated')};
+try{
+ await db.exec(`create role anon;create role authenticated;create schema auth;create table auth.users(id uuid primary key);create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;grant usage on schema auth,public to anon,authenticated;`);
+ await db.query('insert into auth.users values($1),($2),($3)',[A,B,S]);
+ await db.exec(await readFile(new URL('../supabase/proposals/assist.sql',import.meta.url),'utf8'));
+ await db.query('insert into assist_staff values($1)',[S]);
+ await user(A);
+ const id=(await db.query("insert into assist_requests(user_id,service,brief) values($1,'redemption','Synthetic test request') returning id",[A])).rows[0].id;
+ await reject('insert into assist_staff values($1)',[A]);
+ await reject("insert into assist_requests(user_id,service,brief) values($1,'health','Foreign request test')",[B]);
+ await reject("update assist_requests set status='submitted' where id=$1",[id]);
+ await reject('update assist_requests set user_id=$1 where id=$2',[B,id]);
+ await user(B);eq((await db.query('select * from assist_requests')).rows.length,0);
+ eq((await db.query("update assist_requests set brief='Foreign changed request' where id=$1 returning id",[id])).rows.length,0);
+ await user(S);eq((await db.query('select * from assist_requests')).rows.length,0);
+ await user(A);await db.query("update assist_requests set status='submitted',consent_version='assist-scoping-v1' where id=$1",[id]);
+ eq((await db.query("update assist_requests set brief='Attempt late overwrite' where id=$1 returning id",[id])).rows.length,0);
+ await reject('delete from assist_requests where id=$1',[id]);
+ await user(S);eq((await db.query('select * from assist_requests')).rows.length,1);
+ await db.query("insert into assist_case_events(request_id,actor_id,kind,message) values($1,$2,'received','Scoping only')",[id,S]);
+ await reject("insert into assist_case_events(request_id,actor_id,kind,message) values($1,$2,'paid','Not allowed')",[id,S]);
+ const quote="insert into assist_quote_drafts(request_id,revision,author_id,scope,calculation) values($1,$2,$3,'Synthetic scope only','{}')";
+ await db.query(quote,[id,1,S]);await reject(quote,[id,1,S]);await db.query(quote,[id,2,S]);
+ await reject("update assist_quote_drafts set scope='Overwrite prior quote'");
+ await reject('delete from assist_quote_drafts');
+ await user(A);eq((await db.query('select * from assist_case_events')).rows.length,1);eq((await db.query('select * from assist_quote_drafts')).rows.length,0);
+ await reject(quote,[id,3,A]);
+ await reject("insert into assist_case_events(request_id,actor_id,kind,message) values($1,$2,'received','Forged staff note')",[id,A]);
+ await user(B);eq((await db.query('select * from assist_case_events')).rows.length,0);
+ await db.exec('reset role;set role anon');
+ for(const table of ['assist_staff','assist_requests','assist_case_events','assist_quote_drafts'])await reject(`select * from ${table}`);
+ console.log(`Assist local RLS: ${checks} checks passed; owner isolation, consent, staff scoping, immutable quote revisions and anonymous denial.`);
+}finally{await db.close()}

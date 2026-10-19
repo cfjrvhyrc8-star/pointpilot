@@ -34,6 +34,8 @@ The user approved adding a completely paid concierge and recommendations for car
 
 ### P0 — reliability and controlled access, before inviting testers
 
+New disabled implementation: saved Assist drafts, explicit scoping consent, restricted staff queue, customer-visible scoping events and append-only internal quote revisions. Local PostgreSQL isolation tests pass (23 checks). See [assist-request-workflow.md](assist-request-workflow.md). Hosted schema, staff grants, feature activation and browser persistence QA are not completed; quote acceptance/payment remain unavailable.
+
 - [ ] Finish physical iPhone checks across all nine destinations: keyboard open/closed, bottom actions, safe areas, no horizontal page overflow and date selection/save/reload.
 - [ ] Complete desktop Safari/Chrome keyboard traversal and responsive regression; investigate repeatable blank-page/client-error behaviour.
 - [ ] Exercise live failure/recovery flows safely: failed load/save, interrupted connectivity, timeout and retry without falsely reporting success.

@@ -34,6 +34,7 @@ const files=["app/page.js","app/login/page.js","app/cards/page.js","app/pricing/
 files.push("app/dashboard/BookingChecklist.js","lib/booking-checklist.js");
 files.push("app/dashboard/MonthlyRewardPlan.js","lib/spend-estimate.js");
 files.push("app/assist/page.js","app/assist/preview.js");
+files.push("app/assist/requests/page.js","app/assist/requests/workspace.js");
 for(const file of files)parser.parse(fs.readFileSync(file,"utf8"),{sourceType:"module",plugins:["jsx"]});
 if(TOP_CARDS.length!==30||new Set(TOP_CARDS.map(x=>`${x.issuer}|${x.name}`)).size!==30)throw new Error("The India catalogue must contain 30 unique cards.");
 if(AIRLINE_PROGRAMS.length!==12||new Set(AIRLINE_PROGRAMS.map(x=>x.code)).size!==12||AIRLINE_PROGRAMS.some(x=>!x.source_url||!x.award_search_url))throw new Error("The airline programme directory must contain 12 sourced programmes.");
